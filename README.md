@@ -1,129 +1,217 @@
-# PulseSensor on CYD (Cheap Yellow Display)
+# PulseSensor CYD Dashboard
 
-Turn a $15 display into a standalone heartbeat monitor — no coding required.
+A one-screen PulseSensor heartbeat dashboard for the ESP32 **Cheap Yellow Display** (CYD). Flash from your browser, wire three colored wires, and watch your pulse live with sound, light, and touch volume.
 
-![PulseSensor CYD Demo](images/demo.gif)
-<!-- TODO: Add actual demo image/gif -->
+![CYD Pulse Dashboard banner](docs/readme-banner.svg)
 
-## ⚡ Flash Now
-
-**[Click here to flash your CYD](https://worldfamouselectronics.github.io/PulseSensor_CYD/)** — works in Chrome, Edge, or Opera.
-
-No Arduino IDE needed. Just plug in your CYD and click.
-
-## What's a CYD?
-
-The **Cheap Yellow Display** (ESP32-2432S028R) is a ~$15 development board with a built-in 2.8" color touchscreen. The name was coined by Irish maker [Brian Lough](https://www.youtube.com/@BrianLough), who built a thriving community around it. His [ESP32-Cheap-Yellow-Display](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display) repo is the go-to resource for CYD projects.
-
-## Hardware
-
-You need:
-- **CYD** — ESP32-2432S028R ([Amazon](https://www.amazon.com/s?k=ESP32-2432S028R) or AliExpress, ~$15)
-- **PulseSensor** — [pulsesensor.com](https://pulsesensor.com/products/pulse-sensor-amped)
-- **USB cable** — micro-USB, data-capable (not charge-only)
-
-## Wiring
-
-| PulseSensor Wire | CYD Connection |
-|------------------|----------------|
-| 🔴 **RED** (+V) | 3.3V on CN1 connector |
-| ⚫ **BLACK** (GND) | GND on P3 or CN1 |
-| 🟣 **PURPLE** (Signal) | GPIO 35 on P3 connector |
-
-![Wiring Diagram](images/wiring.png)
-<!-- TODO: Add actual wiring diagram -->
-
-## What You'll See
-
-Once flashed and wired, the display shows:
-
-- **BPM** — Large heart rate reading
-- **Waveform** — Smooth scrolling pulse wave
-- **IBI** — Inter-beat interval (ms)
-- **Heart indicator** — Flashes red with each beat
-
-When no finger is detected for 3 seconds, the display resets.
-
-## Building from Source
-
-If you want to modify the code:
-
-### Requirements
-- Arduino IDE 2.x
-- ESP32 board package (Arduino Core 3.x)
-- Libraries:
-  - [TFT_eSPI](https://github.com/Bodmer/TFT_eSPI) by Bodmer
-  - [PulseSensor Playground](https://github.com/WorldFamousElectronics/PulseSensorPlayground)
-
-### TFT_eSPI Setup
-
-The CYD requires specific TFT_eSPI configuration. Copy `User_Setup.h` from this repo to your TFT_eSPI library folder, or see [Brian Lough's guide](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display/blob/main/SETUP.md).
-
-### Compile
-
-1. Open `PulseSensor_CYD.ino` in Arduino IDE
-2. Select board: **ESP32 Dev Module**
-3. Upload speed: **115200** (if 921600 fails)
-4. Upload
-
-### Export .bin for WebSerial
-
-To update the WebSerial flasher:
-
-```
-Arduino IDE → Sketch → Export Compiled Binary
-```
-
-Copy the `.bin` file to the `firmware/` folder.
-
-## File Structure
-
-```
-PulseSensor_CYD/
-├── PulseSensor_CYD.ino    # Main Arduino sketch
-├── User_Setup.h           # TFT_eSPI config for CYD
-├── index.html             # WebSerial flash page
-├── manifest.json          # ESP Web Tools config
-├── firmware/
-│   └── PulseSensor_CYD.bin
-├── images/
-│   ├── demo.gif
-│   └── wiring.png
-└── README.md
-```
-
-## Customization
-
-Colors and layout are defined at the top of the sketch:
-
-```cpp
-#define COLOR_BG          0x18C3    // Background
-#define COLOR_WAVEFORM    0xE1E9    // Waveform line
-#define COLOR_BPM         0x4F10    // BPM text
-#define COLOR_HEART       0xEA29    // Heart indicator
-```
-
-## Troubleshooting
-
-**No serial port in flasher?**  
-Try a different USB cable — many are charge-only.
-
-**Flat line on waveform?**  
-Check that purple wire connects to GPIO 35.
-
-**Erratic readings?**  
-Apply gentle, steady pressure. Insulate the back of your PulseSensor with the velcro dot from your kit.
-
-## License
-
-MIT — hack away.
-
-## Links
-
-- [PulseSensor.com/cyd](https://pulsesensor.com/pages/cyd) — Tutorial page
-- [PulseSensor Playground](https://github.com/WorldFamousElectronics/PulseSensorPlayground) — Arduino library
-- [Brian Lough's CYD repo](https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display) — Community hub
+> **Educational biofeedback demo &mdash; not for medical use.**
 
 ---
 
-Made with ♥ by [World Famous Electronics](https://pulsesensor.com)
+## 👉 Easiest install: [pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)
+
+That page has a one-click web installer, wiring diagram, and the full tutorial. Use it if you just want to flash your CYD and see your heartbeat. This README is for people who want to read the source or build from source.
+
+---
+
+## What You Get
+
+| Channel | Feedback |
+| --- | --- |
+| Screen | Cyan waveform (searching) → white waveform (locked), BPM, IBI, 12-step quality meter |
+| Light | Onboard rear red LED blinks and fades on every qualified beat |
+| Sound | Short heartbeat tone on the CYD speaker (GPIO 26) |
+| Touch | Header buttons change speaker volume, default 1/10 |
+| Heart | Centered animated heart whose outline follows the live trace color |
+
+| Searching for signal | Locked on qualified beat |
+| --- | --- |
+| ![Searching signal screen](docs/screenshots/searching.svg) | ![Locked qualified beat screen](docs/screenshots/locked.svg) |
+
+---
+
+## Wire The PulseSensor
+
+| PulseSensor Wire | CYD Connection |
+| --- | --- |
+| Red (+V) | `3.3V` on CN1 |
+| Black (GND) | `GND` on P3 or CN1 |
+| Purple (Signal) | `GPIO 35` on P3 |
+
+**Use 3.3V, not 5V.** Signal must go to `GPIO 35`.
+
+---
+
+## Flash Your CYD
+
+### Option A — One-click web installer (recommended)
+
+Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chrome, Edge, or Brave on a desktop or laptop. Plug in your CYD over USB. Click **Install**.
+
+The same installer is also hosted from this repo:
+**[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
+
+### Option B — Local USB flash
+
+This is the verified developer path used to build the binaries that ship to the web installer.
+
+1. Plug one CYD into USB.
+2. Detect the serial port:
+
+```bash
+arduino-cli board list
+```
+
+3. Flash with the helper script:
+
+```bash
+./flash-cyd.sh /dev/cu.usbserial-3110
+```
+
+If your serial port is different, pass it as the first argument. The script includes the required `TFT_eSPI` CYD display compile flags and uses `115200` upload speed.
+
+### Option C — Build in Arduino IDE
+
+The firmware is intentionally kept as one `.ino` file so beginners can open it directly:
+
+```text
+PulseSensor_CYD.ino
+```
+
+Steps:
+
+1. Download `PulseSensor_CYD.ino`.
+2. Make a folder named `PulseSensor_CYD`. Put the `.ino` file inside.
+3. Open it in Arduino IDE 2.x.
+4. Install the ESP32 board package.
+5. Install these libraries: `TFT_eSPI`, `PulseSensor Playground`, `XPT2046_Touchscreen`.
+6. Configure `TFT_eSPI` for the CYD display (see `flash-cyd.sh` for the exact build flags &mdash; preferred over editing global `User_Setup.h`).
+7. Select an ESP32 board and upload at `115200`.
+
+---
+
+## PulseSensor Playground Tie-Ins
+
+Every reading on screen comes directly from the [PulseSensor Playground](https://github.com/WorldFamousElectronics/PulseSensorPlayground) library, so what you see is what you'd see in your own Arduino sketches.
+
+| On screen | Playground call |
+| --- | --- |
+| Live waveform | `getLatestSample()` |
+| Heart pulse / LED blink / tone | `sawStartOfBeat()` |
+| Inside-beat indicator | `isInsideBeat()` |
+| BPM | `getBeatsPerMinute()` |
+| IBI | `getInterBeatIntervalMs()` |
+| Amplitude meter | `getPulseAmplitude()` |
+| Dotted threshold guide | `setThreshold(550)` |
+
+The 12-step quality meter rises on qualified beats and falls on questionable ones. Lock at `10/12`. The `R#` counter shows automatic detector re-arms.
+
+---
+
+## Quick Troubleshooting
+
+**No serial port?** Try a different USB cable &mdash; many micro-USB cables are charge-only.
+
+**Flat waveform?** Confirm the purple wire is on `GPIO 35`, not 36 or 34.
+
+**Erratic readings?** Gentle, steady finger pressure. Insulate the back of the sensor. The [Stabilizer Ring](https://pulsesensor.com/products/gold-stablizer-ring) gives the cleanest signal.
+
+**BPM stays at 0?** Give it 5&ndash;10 seconds. The detector needs a few clean beats before it reports BPM.
+
+---
+
+## Hardware Reference
+
+- **Board:** ESP32-2432S028R CYD
+- **Display:** ILI9341 320&times;240 TFT
+- **Sensor input:** PulseSensor signal on `GPIO 35`
+- **RGB LED:** onboard CYD LED, active-low PWM
+- **Speaker:** `GPIO 26`
+- **Touch:** XPT2046 controller on HSPI
+
+```text
+PULSE_PIN       = 35
+BACKLIGHT       = 21
+LED_RED_PIN     = 4
+LED_GREEN_PIN   = 16
+LED_BLUE_PIN    = 17
+SPEAKER_PIN     = 26
+TOUCH_IRQ       = 36
+TOUCH_MISO      = 39
+TOUCH_MOSI      = 32
+TOUCH_SCLK      = 25
+TOUCH_CS        = 33
+```
+
+### Why GPIO 35?
+
+The PulseSensor signal pin on this CYD revision was found with a small analog pin scanner. Signal was visible on `IO35`, not the originally documented `GPIO 36`. The scanner is its own diagnostic sketch: [CYD_Analog_Pin_Scanner](https://github.com/yury-g/CYD_Analog_Pin_Scanner).
+
+### ESP32 analog quirk
+
+PulseSensorPlayground's detector expects 10-bit analog samples (`0..1023`, idle near `512`). ESP32 defaults to 12-bit (`0..4095`), so this firmware calls:
+
+```cpp
+analogReadResolution(10);
+```
+
+That keeps the library's threshold and beat-detection math in the range it expects.
+
+---
+
+## Feature Wishlist
+
+Useful next ideas, only if they improve the student experience or the accuracy of the reading:
+
+- **Method Overlay:** tap the quality panel to cycle through the live Playground method names behind each reading.
+- **USB Serial Lab Mode:** optional Playground-style serial output for Arduino Serial Plotter or a WebSerial monitor.
+
+## Avoid For Now
+
+Good Playground branches that should stay out of this default firmware until they clearly improve the CYD experience:
+
+- Multi-sensor and Pulse Transit Time experiments &mdash; extra wiring; wait until the one-sensor lesson is rock solid.
+- WiFi server mode &mdash; credentials and classroom setup friction without improving the default experience.
+- Servo or motor outputs &mdash; fun, but they add hardware without improving accuracy here.
+- Automatic Playground `blinkOnPulse()` / `fadeOnPulse()` &mdash; less clear than the current qualified-beat-gated CYD LED feedback.
+
+---
+
+## Build the Web Installer Firmware
+
+The web installer's binary parts live in `docs/flasher/firmware/`. Rebuild them with:
+
+```bash
+bash scripts/build-web-flasher-firmware.sh
+```
+
+The script uses the same board family, upload speed, and display flags as `flash-cyd.sh`. It writes:
+
+- `docs/flasher/firmware/bootloader.bin` (offset `0x1000`)
+- `docs/flasher/firmware/partitions.bin` (offset `0x8000`)
+- `docs/flasher/firmware/boot_app0.bin` (offset `0xE000`)
+- `docs/flasher/firmware/firmware.bin` (offset `0x10000`)
+
+The manifest at `docs/flasher/manifest.json` lists those offsets for [ESP Web Tools](https://esphome.github.io/esp-web-tools/).
+
+## Regenerate Screenshots
+
+After UI changes:
+
+```bash
+node scripts/render-dashboard-screenshots.mjs
+```
+
+---
+
+## Release
+
+Current release: `v1.2.0`. First known-good single-screen release: `v1.0.0`. See [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## License & Credits
+
+MIT. Made by [World Famous Electronics](https://pulsesensor.com/pages/about-us) &mdash; the original PulseSensor since 2012.
+
+Heartbeats in your project, lickety-split. ♥
