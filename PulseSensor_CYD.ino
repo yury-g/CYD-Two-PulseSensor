@@ -689,7 +689,7 @@ void drawHeader() {
   beatHeartNeedsRedraw = true;
 
   tft.setTextSize(1);
-  tft.setTextColor(COLOR_MUTED, COLOR_BG);
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setCursor(10, 8);
   tft.print("PulseSensor.com");
   drawVolumeControl();
