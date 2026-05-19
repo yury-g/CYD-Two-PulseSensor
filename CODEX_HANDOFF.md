@@ -35,14 +35,22 @@ The firmware now uses one `PulseSensorPlayground(2)` detector with indexed chann
 - pickup quality bars for each sensor
 - `BETTER PICKUP` verdict for A/B testing
 
+It also emits compact `AB,...` serial telemetry at 115200 baud for `webserial.html`, a Chrome Web Serial A/B dashboard with a larger raw overlap comparator, BPM/IBI trends, beat-event markers, quality bars, and a demo mode. The design rule is additive: keep the CYD fully useful on its own, and let the browser be the expanded lab view.
+
 ## Current Visual Direction
 
-2026-05-19 13:36:21 EDT: the one-screen layout was refocused from raw signal comparison to sensor A/B performance with PulseSensorPlayground. The top keeps the useful raw visual comparator as two small waveform strips; the bottom answers which sensor produces more believable BPM, IBI, and beat events. This pass has built and flashed; hardware screen feedback is pending.
+2026-05-19 13:47:28 EDT: the one-screen layout remains the standalone CYD instrument, and the firmware now also streams telemetry for the browser dashboard. This pass has built, flashed, and the browser demo mode has been visually checked; live CYD+browser feedback is pending.
 
 Rendered reference:
 
 ```text
 docs/screenshots/playground-ab-20260519-133133-EDT.svg
+```
+
+Browser dashboard:
+
+```text
+webserial.html
 ```
 
 Decision log:

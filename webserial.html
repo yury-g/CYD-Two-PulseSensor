@@ -1,0 +1,1476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Two PulseSensor A/B Lab</title>
+<style>
+  :root {
+    --bg: #050706;
+    --panel: #101413;
+    --panel-strong: #151b19;
+    --line: #2b3532;
+    --muted: #96a19d;
+    --text: #f6fbf8;
+    --blue: #8fdfff;
+    --yellow: #fff4a8;
+    --green: #9bff9b;
+    --red: #ff5d73;
+    --orange: #ffbc66;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    letter-spacing: 0;
+  }
+
+  button, select {
+    font: inherit;
+  }
+
+  .app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+  }
+
+  header {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--line);
+    background: #080b0a;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    line-height: 1.1;
+    font-weight: 800;
+  }
+
+  .subtitle {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .button, select {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--text);
+    min-height: 36px;
+    padding: 0 12px;
+  }
+
+  .button {
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .button.primary {
+    background: #e9fff3;
+    color: #08100c;
+    border-color: #e9fff3;
+  }
+
+  .button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(310px, 0.8fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .left, .right {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+  }
+
+  .panel {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    overflow: hidden;
+  }
+
+  .panel-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .canvas-wrap {
+    position: relative;
+    height: min(46vh, 430px);
+    min-height: 300px;
+  }
+
+  .canvas-wrap.compact {
+    height: 224px;
+    min-height: 224px;
+  }
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #020303;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .key {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .auto-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .auto-toggle input {
+    accent-color: var(--green);
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  .dot.on { background: var(--green); }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .sensor {
+    padding: 12px;
+    border-top: 4px solid var(--blue);
+  }
+
+  .sensor.b { border-top-color: var(--yellow); }
+
+  .sensor-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .bpm {
+    margin: 8px 0 2px;
+    font-size: clamp(2.5rem, 8vw, 4.8rem);
+    line-height: 0.9;
+    font-weight: 850;
+  }
+
+  .details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .mini {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px;
+    background: #0b0f0e;
+  }
+
+  .mini span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .mini strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 1.05rem;
+  }
+
+  .trust-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 10px 12px 0;
+  }
+
+  .trust-chip {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 8px;
+    background: #070908;
+  }
+
+  .trust-chip span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .trust-chip strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 1.05rem;
+  }
+
+  .bar {
+    height: 10px;
+    margin-top: 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+    background: #020303;
+  }
+
+  .bar > i {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--green);
+  }
+
+  .verdict {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    min-height: 132px;
+  }
+
+  .ibi-panel {
+    padding: 14px;
+  }
+
+  .ibi-readout {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+
+  .ibi-delta {
+    font-size: 2.35rem;
+    line-height: 1;
+    font-weight: 900;
+    color: var(--orange);
+  }
+
+  .ibi-labels {
+    text-align: right;
+    color: var(--muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .ibi-scope {
+    position: relative;
+    height: 42px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background:
+      linear-gradient(90deg, transparent 49.6%, rgba(155,255,155,0.65) 49.6%, rgba(155,255,155,0.65) 50.4%, transparent 50.4%),
+      repeating-linear-gradient(90deg, #070908 0, #070908 23px, #111816 24px);
+    overflow: hidden;
+  }
+
+  .ibi-dot {
+    position: absolute;
+    top: 10px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 2px #020303;
+  }
+
+  .ibi-dot.a { background: var(--blue); }
+  .ibi-dot.b { background: var(--yellow); top: 24px; }
+
+  .ibi-copy {
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 0.8rem;
+    line-height: 1.35;
+  }
+
+  .winner {
+    min-width: 92px;
+    min-height: 92px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: #070908;
+    font-size: 3rem;
+    font-weight: 900;
+  }
+
+  .verdict-copy {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .verdict-copy strong {
+    display: block;
+    color: var(--text);
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+  }
+
+  .log {
+    height: 150px;
+    overflow: auto;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: #cfe5dc;
+    background: #020303;
+  }
+
+  .log div {
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .unsupported {
+    display: none;
+    padding: 9px 12px;
+    color: #1e1300;
+    background: #ffd98e;
+    font-weight: 700;
+  }
+
+  .unsupported.show {
+    display: block;
+  }
+
+  @media (max-width: 980px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 680px) {
+    header {
+      grid-template-columns: 1fr;
+    }
+
+    .toolbar {
+      justify-content: flex-start;
+    }
+
+    .score-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .trust-row {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .canvas-wrap {
+      min-height: 260px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>Two PulseSensor A/B Lab</h1>
+      <div class="subtitle">Raw overlap comparator plus PulseSensorPlayground BPM, IBI, and beat pickup.</div>
+    </div>
+    <div class="toolbar">
+      <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">Disconnected</span></div>
+      <label class="auto-toggle" title="Reconnect to a previously approved CYD serial port only when this box is turned on">
+        <input id="autoConnect" type="checkbox" />
+        Auto
+      </label>
+      <select id="windowSelect" aria-label="Time window">
+        <option value="1">1 sec</option>
+        <option value="3">3 sec</option>
+        <option value="5" selected>5 sec</option>
+        <option value="10">10 sec</option>
+        <option value="20">20 sec</option>
+      </select>
+      <button id="connectButton" class="button primary" type="button">Connect</button>
+      <button id="demoButton" class="button" type="button">Demo</button>
+      <button id="clearButton" class="button" type="button">Clear</button>
+    </div>
+  </header>
+
+  <div id="unsupported" class="unsupported">Web Serial needs Chrome, Edge, or Brave on a secure page such as localhost or HTTPS.</div>
+
+  <main>
+    <section class="left">
+      <section class="panel">
+        <div class="panel-title">
+          <span>Raw Overlap Comparator</span>
+          <div class="legend">
+            <span class="key"><span class="swatch" style="background:var(--blue)"></span>A GPIO35</span>
+            <span class="key"><span class="swatch" style="background:var(--yellow)"></span>B GPIO27</span>
+            <span class="key"><span class="swatch" style="background:var(--green)"></span>overlap</span>
+          </div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="rawCanvas"></canvas>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>Timing Agreement History</span>
+          <div class="legend">
+            <span class="key"><span class="swatch" style="background:var(--blue)"></span>A</span>
+            <span class="key"><span class="swatch" style="background:var(--yellow)"></span>B</span>
+            <span class="key"><span class="swatch" style="background:var(--green)"></span>agree</span>
+            <span class="key"><span class="swatch" style="background:var(--orange)"></span>drift</span>
+            <span class="key"><span class="swatch" style="background:var(--red)"></span>solo</span>
+          </div>
+        </div>
+        <div class="canvas-wrap compact">
+          <canvas id="trendCanvas"></canvas>
+        </div>
+        <div class="trust-row">
+          <div class="trust-chip"><span>Agree</span><strong id="agreeCount">0</strong></div>
+          <div class="trust-chip"><span>Drift</span><strong id="driftCount">0</strong></div>
+          <div class="trust-chip"><span>A Solo</span><strong id="aSoloCount">0</strong></div>
+          <div class="trust-chip"><span>B Solo</span><strong id="bSoloCount">0</strong></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="right">
+      <section class="score-grid">
+        <div class="panel sensor a">
+          <div class="sensor-head"><span>A GPIO35</span><span id="aLock">search</span></div>
+          <div id="aBpm" class="bpm">--</div>
+          <div class="details">
+            <div class="mini"><span>IBI</span><strong id="aIbi">--</strong></div>
+            <div class="mini"><span>AMP</span><strong id="aAmp">--</strong></div>
+            <div class="mini"><span>BEATS</span><strong id="aBeats">0</strong></div>
+          </div>
+          <div class="bar"><i id="aQuality"></i></div>
+        </div>
+
+        <div class="panel sensor b">
+          <div class="sensor-head"><span>B GPIO27</span><span id="bLock">search</span></div>
+          <div id="bBpm" class="bpm">--</div>
+          <div class="details">
+            <div class="mini"><span>IBI</span><strong id="bIbi">--</strong></div>
+            <div class="mini"><span>AMP</span><strong id="bAmp">--</strong></div>
+            <div class="mini"><span>BEATS</span><strong id="bBeats">0</strong></div>
+          </div>
+          <div class="bar"><i id="bQuality"></i></div>
+        </div>
+      </section>
+
+      <section class="panel verdict">
+        <div id="winner" class="winner">--</div>
+        <div class="verdict-copy">
+          <strong id="verdictTitle">Waiting for serial data</strong>
+          <span id="verdictBody">Connect the CYD to compare which sensor gets believable Playground beats sooner and holds them more steadily.</span>
+        </div>
+      </section>
+
+      <section class="panel ibi-panel">
+        <div class="ibi-readout">
+          <div>
+            <div class="panel-title" style="padding:0;border:0;margin-bottom:8px;">IBI Microscope</div>
+            <div id="ibiDelta" class="ibi-delta">--</div>
+          </div>
+          <div id="ibiLabels" class="ibi-labels">A -- ms<br>B -- ms</div>
+        </div>
+        <div class="ibi-scope" aria-label="Magnified IBI difference scale">
+          <span id="ibiDotA" class="ibi-dot a" style="left:50%"></span>
+          <span id="ibiDotB" class="ibi-dot b" style="left:50%"></span>
+        </div>
+        <div id="ibiCopy" class="ibi-copy">Small IBI differences are magnified here. Center means the two detectors agree.</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title"><span>Serial Events</span><span id="sampleCount">0 samples</span></div>
+        <div id="log" class="log"></div>
+      </section>
+    </section>
+  </main>
+</div>
+
+<script>
+const COLORS = {
+  blue: "#8fdfff",
+  yellow: "#fff4a8",
+  green: "#9bff9b",
+  grid: "#1b2421",
+  text: "#f6fbf8",
+  muted: "#96a19d",
+  orange: "#ffbc66",
+  red: "#ff5d73"
+};
+
+const MAX_POINTS = 3000;
+const TIMING = {
+  ibiAgreeMs: 35,
+  ibiDriftMs: 90,
+  bpmAgree: 3,
+  bpmDrift: 8,
+  beatPairMs: 430
+};
+const state = {
+  points: [],
+  connected: false,
+  autoConnect: false,
+  autoConnectTried: false,
+  demoTimer: null,
+  demoWasHighA: false,
+  demoWasHighB: false,
+  demoBeatUntilA: 0,
+  demoBeatUntilB: 0,
+  port: null,
+  reader: null,
+  lastBeatA: 0,
+  lastBeatB: 0
+};
+
+const els = {
+  statusDot: document.getElementById("statusDot"),
+  statusText: document.getElementById("statusText"),
+  unsupported: document.getElementById("unsupported"),
+  autoConnect: document.getElementById("autoConnect"),
+  connectButton: document.getElementById("connectButton"),
+  demoButton: document.getElementById("demoButton"),
+  clearButton: document.getElementById("clearButton"),
+  windowSelect: document.getElementById("windowSelect"),
+  rawCanvas: document.getElementById("rawCanvas"),
+  trendCanvas: document.getElementById("trendCanvas"),
+  agreeCount: document.getElementById("agreeCount"),
+  driftCount: document.getElementById("driftCount"),
+  aSoloCount: document.getElementById("aSoloCount"),
+  bSoloCount: document.getElementById("bSoloCount"),
+  log: document.getElementById("log"),
+  sampleCount: document.getElementById("sampleCount"),
+  winner: document.getElementById("winner"),
+  verdictTitle: document.getElementById("verdictTitle"),
+  verdictBody: document.getElementById("verdictBody"),
+  ibiDelta: document.getElementById("ibiDelta"),
+  ibiLabels: document.getElementById("ibiLabels"),
+  ibiDotA: document.getElementById("ibiDotA"),
+  ibiDotB: document.getElementById("ibiDotB"),
+  ibiCopy: document.getElementById("ibiCopy"),
+  aBpm: document.getElementById("aBpm"),
+  aIbi: document.getElementById("aIbi"),
+  aAmp: document.getElementById("aAmp"),
+  aBeats: document.getElementById("aBeats"),
+  aLock: document.getElementById("aLock"),
+  aQuality: document.getElementById("aQuality"),
+  bBpm: document.getElementById("bBpm"),
+  bIbi: document.getElementById("bIbi"),
+  bAmp: document.getElementById("bAmp"),
+  bBeats: document.getElementById("bBeats"),
+  bLock: document.getElementById("bLock"),
+  bQuality: document.getElementById("bQuality")
+};
+
+if (!("serial" in navigator)) {
+  els.unsupported.classList.add("show");
+  els.connectButton.disabled = true;
+  els.autoConnect.disabled = true;
+}
+
+els.autoConnect.checked = state.autoConnect;
+els.autoConnect.addEventListener("change", () => {
+  state.autoConnect = els.autoConnect.checked;
+  localStorage.setItem("cydAutoConnect", state.autoConnect ? "1" : "0");
+  if (state.autoConnect && !state.connected) tryAutoConnect();
+});
+els.connectButton.addEventListener("click", () => {
+  if (state.connected) disconnectSerial();
+  else connectSerial();
+});
+els.demoButton.addEventListener("click", toggleDemo);
+els.clearButton.addEventListener("click", clearData);
+els.windowSelect.addEventListener("change", drawAll);
+window.addEventListener("resize", drawAll);
+
+async function connectSerial() {
+  stopDemo();
+  try {
+    const port = await navigator.serial.requestPort();
+    localStorage.setItem("cydAutoConnect", "1");
+    state.autoConnect = true;
+    els.autoConnect.checked = true;
+    await openSerialPort(port, "Connected");
+  } catch (error) {
+    setStatus(false, "Connection cancelled");
+    addLog(`connect: ${error.message}`);
+  }
+}
+
+async function tryAutoConnect() {
+  if (!("serial" in navigator)) return;
+  if (!state.autoConnect || state.connected || state.demoTimer) return;
+
+  try {
+    const ports = await navigator.serial.getPorts();
+    if (!ports.length) return;
+
+    state.autoConnectTried = true;
+    setStatus(false, "Auto connecting...");
+    await openSerialPort(ports[0], "Auto connected");
+    addLog("auto-connected to paired serial port");
+  } catch (error) {
+    setStatus(false, "Auto connect failed");
+    addLog(`auto: ${error.message}`);
+  }
+}
+
+async function openSerialPort(port, statusText) {
+  stopDemo();
+  state.port = port;
+  await state.port.open({ baudRate: 115200 });
+  state.connected = true;
+  setStatus(true, statusText);
+  els.connectButton.textContent = "Disconnect";
+  readLoop();
+}
+
+async function disconnectSerial() {
+  try {
+    if (state.reader) {
+      await state.reader.cancel();
+      state.reader.releaseLock();
+      state.reader = null;
+    }
+    if (state.port) {
+      await state.port.close();
+      state.port = null;
+    }
+  } catch (error) {
+    addLog(`disconnect: ${error.message}`);
+  }
+  state.connected = false;
+  setStatus(false, "Disconnected");
+  els.connectButton.textContent = "Connect";
+}
+
+async function readLoop() {
+  const decoder = new TextDecoderStream();
+  const closed = state.port.readable.pipeTo(decoder.writable);
+  state.reader = decoder.readable.getReader();
+  let buffer = "";
+
+  try {
+    while (state.connected) {
+      const { value, done } = await state.reader.read();
+      if (done) break;
+      buffer += value;
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || "";
+      lines.forEach(handleLine);
+    }
+  } catch (error) {
+    if (state.connected) addLog(`read: ${error.message}`);
+  } finally {
+    try { state.reader.releaseLock(); } catch (error) {}
+    await closed.catch(() => {});
+    state.connected = false;
+    setStatus(false, "Disconnected");
+    els.connectButton.textContent = "Connect";
+  }
+}
+
+function handleLine(line) {
+  const text = line.trim();
+  if (!text) return;
+  if (!text.startsWith("AB,")) {
+    addLog(text);
+    return;
+  }
+
+  const parts = text.split(",");
+  if (parts.length < 22) return;
+  const p = {
+    t: Number(parts[1]),
+    aSample: Number(parts[2]),
+    aBpm: Number(parts[3]),
+    aIbi: Number(parts[4]),
+    aQuality: Number(parts[5]),
+    aBeats: Number(parts[6]),
+    aAmp: Number(parts[7]),
+    aRange: Number(parts[8]),
+    aLocked: Number(parts[9]) === 1,
+    aBeat: Number(parts[10]) === 1,
+    bSample: Number(parts[11]),
+    bBpm: Number(parts[12]),
+    bIbi: Number(parts[13]),
+    bQuality: Number(parts[14]),
+    bBeats: Number(parts[15]),
+    bAmp: Number(parts[16]),
+    bRange: Number(parts[17]),
+    bLocked: Number(parts[18]) === 1,
+    bBeat: Number(parts[19]) === 1,
+    bpmDiff: Number(parts[20]),
+    winner: parts[21] || "EVEN"
+  };
+
+  pushPoint(p);
+}
+
+function pushPoint(point) {
+  state.points.push(point);
+  if (state.points.length > MAX_POINTS) state.points.shift();
+
+  const latest = state.points[state.points.length - 1];
+  if (latest.aBeat && latest.aBeats !== state.lastBeatA) {
+    state.lastBeatA = latest.aBeats;
+    addLog(`A beat ${latest.aBeats}: ${latest.aBpm || "--"} BPM, ${latest.aIbi || "--"} ms`);
+  }
+  if (latest.bBeat && latest.bBeats !== state.lastBeatB) {
+    state.lastBeatB = latest.bBeats;
+    addLog(`B beat ${latest.bBeats}: ${latest.bBpm || "--"} BPM, ${latest.bIbi || "--"} ms`);
+  }
+
+  updateNumbers(latest);
+  drawAll();
+}
+
+function updateNumbers(p) {
+  els.aBpm.textContent = p.aBpm > 0 ? p.aBpm : "--";
+  els.aIbi.textContent = p.aIbi > 0 ? p.aIbi : "--";
+  els.aAmp.textContent = p.aAmp;
+  els.aBeats.textContent = p.aBeats;
+  els.aLock.textContent = p.aLocked ? "locked" : "search";
+  els.aQuality.style.width = `${clamp(p.aQuality, 0, 100)}%`;
+
+  els.bBpm.textContent = p.bBpm > 0 ? p.bBpm : "--";
+  els.bIbi.textContent = p.bIbi > 0 ? p.bIbi : "--";
+  els.bAmp.textContent = p.bAmp;
+  els.bBeats.textContent = p.bBeats;
+  els.bLock.textContent = p.bLocked ? "locked" : "search";
+  els.bQuality.style.width = `${clamp(p.bQuality, 0, 100)}%`;
+
+  els.sampleCount.textContent = `${state.points.length} samples`;
+  updateTrustSummary();
+  updateIbiMicroscope(p);
+}
+
+function updateTrustSummary() {
+  const summary = timingSummary(visiblePoints());
+  els.agreeCount.textContent = summary.agree;
+  els.driftCount.textContent = summary.drift;
+  els.aSoloCount.textContent = summary.soloA;
+  els.bSoloCount.textContent = summary.soloB;
+
+  const winner = winnerFromSummary(summary);
+  els.winner.textContent = winner.label;
+  els.winner.style.color = winner.label === "A" ? COLORS.blue : winner.label === "B" ? COLORS.yellow : COLORS.green;
+  els.verdictTitle.textContent = winner.title;
+  els.verdictBody.textContent = `Green ${summary.greenPct}%, orange ${summary.drift}, red A ${summary.soloA}, red B ${summary.soloB}. ${winner.reason}`;
+}
+
+function updateIbiMicroscope(p) {
+  if (p.aIbi <= 0 || p.bIbi <= 0) {
+    els.ibiDelta.textContent = "--";
+    els.ibiLabels.innerHTML = "A -- ms<br>B -- ms";
+    els.ibiDotA.style.left = "50%";
+    els.ibiDotB.style.left = "50%";
+    els.ibiCopy.textContent = "Waiting for both IBI readings. Center means the two detectors agree.";
+    return;
+  }
+
+  const delta = p.aIbi - p.bIbi;
+  const absDelta = Math.abs(delta);
+  const center = (p.aIbi + p.bIbi) / 2;
+  const zoomMs = 120;
+  const aOffset = clamp(((p.aIbi - center) / zoomMs) * 50, -45, 45);
+  const bOffset = clamp(((p.bIbi - center) / zoomMs) * 50, -45, 45);
+
+  els.ibiDelta.textContent = `Δ ${absDelta} ms`;
+  els.ibiLabels.innerHTML = `A ${p.aIbi} ms<br>B ${p.bIbi} ms`;
+  els.ibiDotA.style.left = `${50 + aOffset}%`;
+  els.ibiDotB.style.left = `${50 + bOffset}%`;
+
+  const leader = delta < 0 ? "A is shorter" : delta > 0 ? "B is shorter" : "matched";
+  const reading = absDelta <= 20 ? "very close" : absDelta <= 60 ? "noticeably different" : "far apart";
+  els.ibiCopy.textContent = `${leader}; the detectors are ${reading}. Scale is magnified around their shared center, ±120 ms.`;
+}
+
+function drawAll() {
+  drawRaw();
+  drawTrend();
+}
+
+function visiblePoints() {
+  if (!state.points.length) return [];
+  const seconds = Number(els.windowSelect.value);
+  const latestT = state.points[state.points.length - 1].t;
+  const minT = latestT - seconds * 1000;
+  return state.points.filter((p) => p.t >= minT);
+}
+
+function setupCanvas(canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.floor(rect.width * ratio));
+  const h = Math.max(1, Math.floor(rect.height * ratio));
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+function drawRaw() {
+  const { ctx, w, h } = setupCanvas(els.rawCanvas);
+  const points = visiblePoints();
+  drawGrid(ctx, w, h, 6, 5);
+  label(ctx, "raw ADC sample, shared 0-1023 scale", 12, 20);
+
+  if (points.length < 2) {
+    empty(ctx, w, h, "Connect the CYD or start Demo");
+    return;
+  }
+
+  drawLine(ctx, points, w, h, "aSample", COLORS.blue, 2, 0, 1023);
+  drawLine(ctx, points, w, h, "bSample", COLORS.yellow, 2, 0, 1023);
+  drawOverlap(ctx, points, w, h);
+}
+
+function drawTrend() {
+  const { ctx, w, h } = setupCanvas(els.trendCanvas);
+  const points = visiblePoints();
+  drawGrid(ctx, w, h, 6, 4);
+
+  if (points.length < 2) {
+    empty(ctx, w, h, "Waiting for telemetry");
+    return;
+  }
+
+  const bpmPlot = { top: 24, bottom: h * 0.36, min: 40, max: 180 };
+  const lane = {
+    top: h * 0.49,
+    bottom: h - 18,
+    aY: h * 0.58,
+    centerY: h * 0.72,
+    bY: h * 0.86
+  };
+
+  drawAxisLabel(ctx, "BPM", 12, bpmPlot.top + 10);
+  drawAxisLabel(ctx, "BEATS", 12, lane.top + 16);
+  drawPlotDivider(ctx, w, lane.top);
+
+  drawBpmAgreementBands(ctx, points, w, bpmPlot);
+  drawScaledLine(ctx, points, w, "aBpm", COLORS.blue, 2, bpmPlot);
+  drawScaledLine(ctx, points, w, "bBpm", COLORS.yellow, 2, bpmPlot);
+  drawTimingAgreement(ctx, points, w, lane);
+}
+
+function drawLine(ctx, points, w, h, key, color, width, min, max) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    const value = Number(p[key]);
+    if (!Number.isFinite(value) || value <= 0) return;
+    const x = xFor(i, points.length, w);
+    const y = yFor(value, min, max, h);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawScaledLine(ctx, points, w, key, color, width, plot) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  let hasPoint = false;
+  points.forEach((p, i) => {
+    const value = Number(p[key]);
+    if (!Number.isFinite(value) || value <= 0) return;
+    const x = xFor(i, points.length, w);
+    const y = yForPlot(value, plot);
+    if (!hasPoint) {
+      ctx.moveTo(x, y);
+      hasPoint = true;
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawTimingAgreement(ctx, points, w, lane) {
+  ctx.save();
+  ctx.fillStyle = "rgba(155,255,155,0.08)";
+  roundRect(ctx, 22, lane.centerY - 15, Math.max(0, w - 44), 30, 15);
+  ctx.fill();
+
+  ctx.strokeStyle = COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, lane.aY);
+  ctx.lineTo(w, lane.aY);
+  ctx.moveTo(0, lane.centerY);
+  ctx.lineTo(w, lane.centerY);
+  ctx.moveTo(0, lane.bY);
+  ctx.lineTo(w, lane.bY);
+  ctx.stroke();
+
+  drawAgreementPath(ctx, points, w, lane);
+
+  const events = classifyBeatEvents(points);
+  events.pairs.forEach((pair) => {
+    const xA = xFor(pair.a.index, points.length, w);
+    const xB = xFor(pair.b.index, points.length, w);
+    const x = (xA + xB) / 2;
+    relationRung(ctx, x, lane.aY, lane.bY, pair.relation === "agree" ? COLORS.green : COLORS.orange, pair.relation === "agree" ? 5 : 4);
+  });
+  events.soloA.forEach((event) => soloMark(ctx, xFor(event.index, points.length, w), lane.aY, COLORS.red));
+  events.soloB.forEach((event) => soloMark(ctx, xFor(event.index, points.length, w), lane.bY, COLORS.red));
+
+  points.forEach((p, i) => {
+    const x = xFor(i, points.length, w);
+    if (isNewBeat(p, points[i - 1], "a")) ibiDot(ctx, x, lane.aY, COLORS.blue);
+    if (isNewBeat(p, points[i - 1], "b")) ibiDot(ctx, x, lane.bY, COLORS.yellow);
+  });
+
+  ctx.fillStyle = COLORS.blue;
+  ctx.fillText("A", 12, lane.aY - 8);
+  ctx.fillStyle = COLORS.green;
+  ctx.fillText("=", 12, lane.centerY + 4);
+  ctx.fillStyle = COLORS.yellow;
+  ctx.fillText("B", 12, lane.bY + 20);
+  ctx.restore();
+}
+
+function drawBpmAgreementBands(ctx, points, w, plot) {
+  const bandTop = plot.top;
+  const bandBottom = plot.bottom;
+  const step = points.length > 1 ? w / (points.length - 1) : w;
+  ctx.save();
+  points.forEach((p, i) => {
+    const relation = sampleRelation(p);
+    if (relation === "none") return;
+    const x = xFor(i, points.length, w);
+    ctx.fillStyle = relation === "agree"
+      ? "rgba(155,255,155,0.12)"
+      : relation === "near"
+        ? "rgba(155,255,155,0.06)"
+        : "rgba(255,188,102,0.14)";
+    ctx.fillRect(Math.max(0, x - step / 2), bandTop, Math.ceil(step) + 1, bandBottom - bandTop);
+  });
+  ctx.restore();
+}
+
+function drawAgreementPath(ctx, points, w, lane) {
+  ctx.save();
+  ctx.lineWidth = 14;
+  ctx.lineCap = "round";
+  let drawing = false;
+
+  points.forEach((p, i) => {
+    const relation = sampleRelation(p);
+    const trusted = relation === "agree" || relation === "near";
+    const x = xFor(i, points.length, w);
+    const offset = relation === "near" ? Math.sin(i * 0.9) * 4 : 0;
+    if (trusted && !drawing) {
+      ctx.beginPath();
+      ctx.moveTo(x, lane.centerY + offset);
+      drawing = true;
+    } else if (trusted) {
+      ctx.strokeStyle = relation === "agree" ? "rgba(155,255,155,0.82)" : "rgba(255,188,102,0.72)";
+      ctx.lineTo(x, lane.centerY + offset);
+    } else if (drawing) {
+      ctx.stroke();
+      drawing = false;
+    }
+  });
+  if (drawing) ctx.stroke();
+  ctx.restore();
+}
+
+function sampleRelation(p) {
+  const hasBothIbi = p.aIbi > 0 && p.bIbi > 0;
+  const hasBothBpm = p.aBpm > 0 && p.bBpm > 0;
+  if (!hasBothIbi || !hasBothBpm) return "none";
+
+  const ibiDiff = Math.abs(p.aIbi - p.bIbi);
+  const bpmDiff = Math.abs(p.aBpm - p.bBpm);
+  if (ibiDiff <= TIMING.ibiAgreeMs && bpmDiff <= TIMING.bpmAgree) return "agree";
+  if (ibiDiff <= TIMING.ibiDriftMs && bpmDiff <= TIMING.bpmDrift) return "near";
+  return "drift";
+}
+
+function isNewBeat(p, previous, channel) {
+  const beatKey = channel === "a" ? "aBeat" : "bBeat";
+  const countKey = channel === "a" ? "aBeats" : "bBeats";
+  if (!p[beatKey]) return false;
+  if (!previous) return p[countKey] > 0;
+  return p[countKey] !== previous[countKey];
+}
+
+function classifyBeatEvents(points) {
+  const aEvents = [];
+  const bEvents = [];
+  points.forEach((p, i) => {
+    if (isNewBeat(p, points[i - 1], "a")) aEvents.push({ index: i, t: p.t });
+    if (isNewBeat(p, points[i - 1], "b")) bEvents.push({ index: i, t: p.t });
+  });
+
+  const usedB = new Set();
+  const pairs = [];
+  const soloA = [];
+
+  aEvents.forEach((a) => {
+    let best = null;
+    bEvents.forEach((b, bIndex) => {
+      if (usedB.has(bIndex)) return;
+      const delta = Math.abs(a.t - b.t);
+      if (delta > TIMING.beatPairMs) return;
+      if (!best || delta < best.delta) best = { b, bIndex, delta };
+    });
+
+    if (best) {
+      usedB.add(best.bIndex);
+      const relationPoint = points[Math.max(a.index, best.b.index)];
+      pairs.push({ a, b: best.b, relation: sampleRelation(relationPoint) === "agree" ? "agree" : "drift" });
+    } else {
+      soloA.push(a);
+    }
+  });
+
+  const soloB = bEvents.filter((event, index) => !usedB.has(index));
+  return { pairs, soloA, soloB };
+}
+
+function timingSummary(points) {
+  const summary = {
+    agree: 0,
+    drift: 0,
+    soloA: 0,
+    soloB: 0,
+    greenSamples: 0,
+    driftSamples: 0,
+    pairedSamples: 0,
+    greenPct: 0,
+    avgBpmDiff: 0,
+    avgIbiDiff: 0,
+    aQuality: 0,
+    bQuality: 0,
+    aLocked: 0,
+    bLocked: 0
+  };
+  let bpmDiffTotal = 0;
+  let ibiDiffTotal = 0;
+  let qualityA = 0;
+  let qualityB = 0;
+
+  points.forEach((p, i) => {
+    const sample = sampleRelation(p);
+    if (sample !== "none") {
+      summary.pairedSamples++;
+      bpmDiffTotal += Math.abs(p.aBpm - p.bBpm);
+      ibiDiffTotal += Math.abs(p.aIbi - p.bIbi);
+      if (sample === "agree" || sample === "near") summary.greenSamples++;
+      if (sample === "drift") summary.driftSamples++;
+    }
+    if (p.aLocked) summary.aLocked++;
+    if (p.bLocked) summary.bLocked++;
+    qualityA += clamp(p.aQuality || 0, 0, 100);
+    qualityB += clamp(p.bQuality || 0, 0, 100);
+
+  });
+
+  const events = classifyBeatEvents(points);
+  summary.agree = events.pairs.filter((pair) => pair.relation === "agree").length;
+  summary.drift = events.pairs.filter((pair) => pair.relation === "drift").length;
+  summary.soloA = events.soloA.length;
+  summary.soloB = events.soloB.length;
+
+  if (summary.pairedSamples > 0) {
+    summary.greenPct = Math.round((summary.greenSamples / summary.pairedSamples) * 100);
+    summary.avgBpmDiff = Math.round(bpmDiffTotal / summary.pairedSamples);
+    summary.avgIbiDiff = Math.round(ibiDiffTotal / summary.pairedSamples);
+  }
+  if (points.length > 0) {
+    summary.aQuality = Math.round(qualityA / points.length);
+    summary.bQuality = Math.round(qualityB / points.length);
+    summary.aLocked = Math.round((summary.aLocked / points.length) * 100);
+    summary.bLocked = Math.round((summary.bLocked / points.length) * 100);
+  }
+  return summary;
+}
+
+function winnerFromSummary(summary) {
+  const aPenalty = summary.soloA * 2 + summary.drift * 0.5 + (100 - summary.aQuality) / 40 + (100 - summary.aLocked) / 35;
+  const bPenalty = summary.soloB * 2 + summary.drift * 0.5 + (100 - summary.bQuality) / 40 + (100 - summary.bLocked) / 35;
+  const totalEvents = summary.agree + summary.drift + summary.soloA + summary.soloB;
+
+  if (totalEvents === 0 && summary.pairedSamples === 0) {
+    return {
+      label: "--",
+      title: "Waiting for beat history",
+      reason: "Green agreement is the target; red solo marks are false-positive suspects."
+    };
+  }
+
+  if (Math.abs(aPenalty - bPenalty) < 1) {
+    return {
+      label: "EVEN",
+      title: "Even trust history",
+      reason: "Both sensors have similar green path, lock, and solo-beat history."
+    };
+  }
+
+  return aPenalty < bPenalty
+    ? { label: "A", title: "Sensor A is cleaner", reason: "A has fewer red solo suspects and steadier lock in this window." }
+    : { label: "B", title: "Sensor B is cleaner", reason: "B has fewer red solo suspects and steadier lock in this window." };
+}
+
+function ibiDot(ctx, x, y, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.strokeStyle = "#020303";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function relationRung(ctx, x, y1, y2, color, width) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x, y1);
+  ctx.lineTo(x, y2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function soloMark(ctx, x, y, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x - 6, y - 6);
+  ctx.lineTo(x + 6, y + 6);
+  ctx.moveTo(x + 6, y - 6);
+  ctx.lineTo(x - 6, y + 6);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function drawOverlap(ctx, points, w, h) {
+  ctx.save();
+  ctx.strokeStyle = COLORS.green;
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  let drawing = false;
+
+  points.forEach((p, i) => {
+    const x = xFor(i, points.length, w);
+    const yA = yFor(p.aSample, 0, 1023, h);
+    const yB = yFor(p.bSample, 0, 1023, h);
+    const close = Math.abs(yA - yB) <= 14;
+    const y = (yA + yB) / 2;
+    if (close && !drawing) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      drawing = true;
+    } else if (close) {
+      ctx.lineTo(x, y);
+    } else if (drawing) {
+      ctx.stroke();
+      drawing = false;
+    }
+  });
+
+  if (drawing) ctx.stroke();
+  ctx.restore();
+}
+
+function drawGrid(ctx, w, h, cols, rows) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = "#020303";
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = COLORS.grid;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < cols; i++) {
+    const x = (w / cols) * i;
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+  }
+  for (let i = 1; i < rows; i++) {
+    const y = (h / rows) * i;
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+  }
+  ctx.stroke();
+}
+
+function label(ctx, text, x, y) {
+  ctx.fillStyle = COLORS.muted;
+  ctx.font = "12px ui-monospace, Menlo, Consolas, monospace";
+  ctx.fillText(text, x, y);
+}
+
+function drawAxisLabel(ctx, text, x, y) {
+  ctx.fillStyle = COLORS.muted;
+  ctx.font = "11px ui-monospace, Menlo, Consolas, monospace";
+  ctx.fillText(text, x, y);
+}
+
+function drawPlotDivider(ctx, w, y) {
+  ctx.save();
+  ctx.strokeStyle = COLORS.grid;
+  ctx.setLineDash([4, 5]);
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(w, y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function empty(ctx, w, h, text) {
+  ctx.fillStyle = COLORS.muted;
+  ctx.font = "16px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(text, w / 2, h / 2);
+  ctx.textAlign = "left";
+}
+
+function beatMark(ctx, x, y, color) {
+  ctx.save();
+  ctx.fillStyle = COLORS.green;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function xFor(index, count, w) {
+  if (count <= 1) return 0;
+  return (index / (count - 1)) * w;
+}
+
+function yFor(value, min, max, h) {
+  const v = clamp((value - min) / (max - min), 0, 1);
+  return h - 18 - v * (h - 38);
+}
+
+function yForPlot(value, plot) {
+  const v = clamp((value - plot.min) / (plot.max - plot.min), 0, 1);
+  return plot.bottom - v * (plot.bottom - plot.top);
+}
+
+function toggleDemo() {
+  if (state.demoTimer) stopDemo();
+  else startDemo();
+}
+
+function startDemo() {
+  clearData();
+  stopDemo();
+  setStatus(true, "Demo data");
+  els.demoButton.textContent = "Stop Demo";
+  const start = performance.now();
+  let beatA = 0;
+  let beatB = 0;
+  state.demoWasHighA = false;
+  state.demoWasHighB = false;
+  state.demoBeatUntilA = 0;
+  state.demoBeatUntilB = 0;
+  state.demoTimer = window.setInterval(() => {
+    const t = performance.now() - start;
+    const beatPhaseA = Math.sin(t / 1000 * Math.PI * 2 * 1.2);
+    const beatPhaseB = Math.sin((t - 110) / 1000 * Math.PI * 2 * 1.16);
+    const highA = beatPhaseA > 0.96;
+    const highB = beatPhaseB > 0.975;
+    const beatNowA = highA && !state.demoWasHighA;
+    const falseSoloB = t > 3200 && Math.floor(t / 7200) !== Math.floor((t - 40) / 7200);
+    const beatNowB = (highB && !state.demoWasHighB) || falseSoloB;
+    const driftSegment = Math.floor(t / 5000) % 3 === 1;
+    const demoIbiA = 833 + Math.round(Math.sin(t / 4200) * 18);
+    const demoIbiB = 846 + Math.round(Math.sin(t / 3900 + 1.1) * 24) + (driftSegment ? 86 : 0);
+    const demoBpmA = Math.round(60000 / demoIbiA);
+    const demoBpmB = Math.round(60000 / demoIbiB);
+    if (beatNowA) beatA++;
+    if (beatNowB) beatB++;
+    if (beatNowA) state.demoBeatUntilA = t + 180;
+    if (beatNowB) state.demoBeatUntilB = t + 180;
+    const beatActiveA = t < state.demoBeatUntilA;
+    const beatActiveB = t < state.demoBeatUntilB;
+    state.demoWasHighA = highA;
+    state.demoWasHighB = highB;
+    pushPoint({
+      t,
+      aSample: Math.round(512 + beatPhaseA * 175 + Math.sin(t / 137) * 18),
+      aBpm: demoBpmA,
+      aIbi: demoIbiA,
+      aQuality: 82 + Math.round(Math.sin(t / 3500) * 8),
+      aBeats: beatA,
+      aAmp: 44,
+      aRange: 210,
+      aLocked: true,
+      aBeat: beatActiveA,
+      bSample: Math.round(512 + beatPhaseB * 135 + Math.sin(t / 181) * 22),
+      bBpm: demoBpmB,
+      bIbi: demoIbiB,
+      bQuality: 62 + Math.round(Math.sin(t / 3000) * 10),
+      bBeats: beatB,
+      bAmp: 32,
+      bRange: 160,
+      bLocked: beatB > 2,
+      bBeat: beatActiveB,
+      bpmDiff: Math.abs(demoBpmA - demoBpmB),
+      winner: "A"
+    });
+  }, 40);
+}
+
+function stopDemo() {
+  if (!state.demoTimer) return;
+  window.clearInterval(state.demoTimer);
+  state.demoTimer = null;
+  els.demoButton.textContent = "Demo";
+  if (!state.connected) setStatus(false, "Disconnected");
+}
+
+function clearData() {
+  state.points = [];
+  state.lastBeatA = 0;
+  state.lastBeatB = 0;
+  els.log.innerHTML = "";
+  els.sampleCount.textContent = "0 samples";
+  drawAll();
+}
+
+function setStatus(on, text) {
+  els.statusDot.classList.toggle("on", on);
+  els.statusText.textContent = text;
+}
+
+function addLog(text) {
+  const row = document.createElement("div");
+  row.textContent = text;
+  els.log.prepend(row);
+  while (els.log.childElementCount > 80) {
+    els.log.lastElementChild.remove();
+  }
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+drawAll();
+</script>
+</body>
+</html>

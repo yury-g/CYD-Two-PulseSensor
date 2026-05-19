@@ -1,5 +1,30 @@
 # Decision Log
 
+## 2026-05-19 13:37:38 EDT — Chrome Web Serial A/B Lab
+
+Status: built, browser demo verified, and flashed 2026-05-19 13:47:28 EDT; awaiting live browser+CYD hardware feedback.
+
+Decision: add a companion Chrome Web Serial dashboard for the two-sensor A/B experiment. The CYD remains the hardware display, but it now streams compact `AB,...` telemetry lines at 115200 baud so `webserial.html` can show a larger browser experience.
+
+Why: the CYD screen is excellent for portable feedback, but the A/B experiment benefits from more room: a large raw overlap comparator, BPM/IBI trends, beat event markers, quality bars, and a readable serial event log. This lets the same hardware test serve quick toddler-friendly visual comparison and deeper heart-doctor-style inspection.
+
+Principle: keep the CYD fully useful as a standalone instrument. The browser view is additive, not a replacement. Future CYD touch work should make the CYD a controller for the shared experiment only after the simultaneous CYD+browser view is validated.
+
+Firmware behavior:
+
+- Emits `AB` CSV telemetry about every 40 ms.
+- Includes raw samples, Playground BPM, IBI, pickup quality, beat counts, amplitude, live range, lock state, recent beat flags, BPM difference, and current winner.
+
+Browser behavior:
+
+- `webserial.html` connects with Web Serial in Chrome, Edge, or Brave.
+- Light blue is sensor A / `GPIO35`, light yellow is sensor B / `GPIO27`, and light green shows agreement: raw waveform overlap, beat events, and IBI timing overlap.
+- The timing chart was revised into an infographic-style ladder: A beats on the upper lane, B beats on the lower lane, green rungs/path when IBI history agrees, orange rungs when beat-to-beat timing drifts, and red rungs for solo-beat false-positive suspects.
+- The verdict now considers the visible trust history: agreement count, drift count, and solo beat suspects for each sensor.
+- The browser includes an `Auto` reconnect toggle that can reopen a previously approved serial port after the first manual Web Serial permission grant.
+- Adds an IBI microscope that magnifies small A/B timing differences around the two sensors' shared IBI center.
+- Includes demo mode so the dashboard can be checked without hardware attached.
+
 ## 2026-05-19 13:31:33 EDT — PulseSensorPlayground A/B Refocus
 
 Status: built and flashed 2026-05-19 13:36:21 EDT; awaiting hardware screen feedback.

@@ -56,6 +56,7 @@
 #define PANEL_W 98
 #define GRAPH_INTERVAL_MS 25
 #define TEXT_INTERVAL_MS 250
+#define SERIAL_INTERVAL_MS 40
 #define SAMPLE_MAX_VALUE 1023
 
 // ===== COLORS (RGB565) =====
@@ -110,7 +111,7 @@ SensorChannel channelB = {"B", "GPIO27", PULSE_B_PIN, 1, COLOR_B, 512, 512, 512,
 int graphX = 0;
 unsigned long lastGraphDraw = 0;
 unsigned long lastTextDraw = 0;
-unsigned long lastSerial = 0;
+unsigned long lastSerialTelemetry = 0;
 bool pulseSensorReady = false;
 
 void setup();
@@ -133,6 +134,7 @@ void drawVerdictPanel();
 void drawQualityBar(int x, int y, int w, int value);
 void drawBeatGlyph(int x, int y, const SensorChannel& channel);
 void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
+void printSerialTelemetry();
 const char* winnerLabel();
 int bpmDelta();
 
@@ -166,12 +168,9 @@ void loop() {
     drawMetrics();
   }
 
-  if (millis() - lastSerial >= 500) {
-    lastSerial = millis();
-    Serial.printf("A bpm=%3d ibi=%4d q=%3d beats=%3d amp=%3d  B bpm=%3d ibi=%4d q=%3d beats=%3d amp=%3d  winner=%s\n",
-                  channelA.bpm, channelA.ibi, channelA.quality, channelA.beatCount, channelA.amplitude,
-                  channelB.bpm, channelB.ibi, channelB.quality, channelB.beatCount, channelB.amplitude,
-                  winnerLabel());
+  if (millis() - lastSerialTelemetry >= SERIAL_INTERVAL_MS) {
+    lastSerialTelemetry = millis();
+    printSerialTelemetry();
   }
 }
 
@@ -495,6 +494,22 @@ void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint1
   tft.setTextColor(color, bg);
   tft.setCursor(cursorX, y);
   tft.print(text);
+}
+
+void printSerialTelemetry() {
+  unsigned long now = millis();
+  int aBeatActive = channelA.beatFlashUntilMs > now ? 1 : 0;
+  int bBeatActive = channelB.beatFlashUntilMs > now ? 1 : 0;
+
+  Serial.printf("AB,%lu,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s\n",
+                now,
+                channelA.sample, channelA.bpm, channelA.ibi, channelA.quality,
+                channelA.beatCount, channelA.amplitude, channelA.range,
+                channelA.locked ? 1 : 0, aBeatActive,
+                channelB.sample, channelB.bpm, channelB.ibi, channelB.quality,
+                channelB.beatCount, channelB.amplitude, channelB.range,
+                channelB.locked ? 1 : 0, bBeatActive,
+                bpmDelta(), winnerLabel());
 }
 
 const char* winnerLabel() {

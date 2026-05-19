@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-label="Two PulseSensor timing infographic mockup">
+  <rect width="1200" height="520" fill="#050706"/>
+
+  <text x="28" y="42" fill="#f6fbf8" font-family="Arial, sans-serif" font-size="22" font-weight="700">Timing Agreement History</text>
+  <text x="28" y="70" fill="#96a19d" font-family="Arial, sans-serif" font-size="14">A/B beat timing: green path means the sensors agree over time</text>
+
+  <g transform="translate(28 96)">
+    <rect x="0" y="0" width="1144" height="250" rx="8" fill="#020303" stroke="#2b3532"/>
+    <g stroke="#1b2421" stroke-width="1">
+      <line x1="120" y1="0" x2="120" y2="250"/>
+      <line x1="260" y1="0" x2="260" y2="250"/>
+      <line x1="400" y1="0" x2="400" y2="250"/>
+      <line x1="540" y1="0" x2="540" y2="250"/>
+      <line x1="680" y1="0" x2="680" y2="250"/>
+      <line x1="820" y1="0" x2="820" y2="250"/>
+      <line x1="960" y1="0" x2="960" y2="250"/>
+      <line x1="0" y1="80" x2="1144" y2="80"/>
+      <line x1="0" y1="170" x2="1144" y2="170"/>
+    </g>
+
+    <text x="18" y="34" fill="#96a19d" font-family="Arial, sans-serif" font-size="14" font-weight="700">BPM</text>
+    <path d="M40 58 L180 58 L300 56 L420 57 L560 57 L700 56 L840 56 L980 57 L1100 57" fill="none" stroke="#8fdfff" stroke-width="3"/>
+    <path d="M40 64 L180 64 L300 63 L420 63 L560 63 L700 64 L840 64 L980 64 L1100 64" fill="none" stroke="#fff4a8" stroke-width="3"/>
+
+    <text x="18" y="118" fill="#96a19d" font-family="Arial, sans-serif" font-size="14" font-weight="700">IBI AGREEMENT</text>
+    <rect x="38" y="137" width="1060" height="52" rx="26" fill="#07110b" stroke="#1b2421"/>
+    <path d="M70 163 C185 163, 244 163, 330 163 S500 164, 620 164 S790 164, 900 163 S1040 163, 1080 163" fill="none" stroke="#9bff9b" stroke-width="18" stroke-linecap="round"/>
+    <path d="M70 163 C185 163, 244 163, 330 163 S500 164, 620 164 S790 164, 900 163 S1040 163, 1080 163" fill="none" stroke="#dfffd8" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+    <g>
+      <line x1="110" y1="115" x2="110" y2="211" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="230" y1="116" x2="230" y2="210" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="350" y1="115" x2="350" y2="211" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="475" y1="115" x2="475" y2="211" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="600" y1="116" x2="600" y2="210" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="725" y1="115" x2="725" y2="211" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="850" y1="116" x2="850" y2="210" stroke="#9bff9b" stroke-width="3"/>
+      <line x1="975" y1="115" x2="975" y2="211" stroke="#9bff9b" stroke-width="3"/>
+      <circle cx="110" cy="115" r="8" fill="#8fdfff"/><circle cx="110" cy="211" r="8" fill="#fff4a8"/>
+      <circle cx="230" cy="116" r="8" fill="#8fdfff"/><circle cx="230" cy="210" r="8" fill="#fff4a8"/>
+      <circle cx="350" cy="115" r="8" fill="#8fdfff"/><circle cx="350" cy="211" r="8" fill="#fff4a8"/>
+      <circle cx="475" cy="115" r="8" fill="#8fdfff"/><circle cx="475" cy="211" r="8" fill="#fff4a8"/>
+      <circle cx="600" cy="116" r="8" fill="#8fdfff"/><circle cx="600" cy="210" r="8" fill="#fff4a8"/>
+      <circle cx="725" cy="115" r="8" fill="#8fdfff"/><circle cx="725" cy="211" r="8" fill="#fff4a8"/>
+      <circle cx="850" cy="116" r="8" fill="#8fdfff"/><circle cx="850" cy="210" r="8" fill="#fff4a8"/>
+      <circle cx="975" cy="115" r="8" fill="#8fdfff"/><circle cx="975" cy="211" r="8" fill="#fff4a8"/>
+    </g>
+  </g>
+
+  <g transform="translate(28 376)">
+    <rect x="0" y="0" width="360" height="112" rx="8" fill="#101413" stroke="#8fdfff"/>
+    <text x="22" y="30" fill="#8fdfff" font-family="Arial, sans-serif" font-size="16" font-weight="700">A</text>
+    <text x="22" y="76" fill="#f6fbf8" font-family="Arial, sans-serif" font-size="42" font-weight="800">73</text>
+    <text x="105" y="76" fill="#96a19d" font-family="Arial, sans-serif" font-size="16">BPM</text>
+    <rect x="170" y="45" width="160" height="18" rx="9" fill="#020303" stroke="#2b3532"/>
+    <rect x="170" y="45" width="138" height="18" rx="9" fill="#9bff9b"/>
+    <text x="170" y="82" fill="#96a19d" font-family="Arial, sans-serif" font-size="13">steady history</text>
+  </g>
+
+  <g transform="translate(420 376)">
+    <rect x="0" y="0" width="360" height="112" rx="8" fill="#101413" stroke="#fff4a8"/>
+    <text x="22" y="30" fill="#fff4a8" font-family="Arial, sans-serif" font-size="16" font-weight="700">B</text>
+    <text x="22" y="76" fill="#f6fbf8" font-family="Arial, sans-serif" font-size="42" font-weight="800">72</text>
+    <text x="105" y="76" fill="#96a19d" font-family="Arial, sans-serif" font-size="16">BPM</text>
+    <rect x="170" y="45" width="160" height="18" rx="9" fill="#020303" stroke="#2b3532"/>
+    <rect x="170" y="45" width="124" height="18" rx="9" fill="#9bff9b"/>
+    <text x="170" y="82" fill="#96a19d" font-family="Arial, sans-serif" font-size="13">slightly shorter run</text>
+  </g>
+
+  <g transform="translate(812 376)">
+    <rect x="0" y="0" width="360" height="112" rx="8" fill="#101413" stroke="#2b3532"/>
+    <text x="22" y="30" fill="#96a19d" font-family="Arial, sans-serif" font-size="16" font-weight="700">BEST HISTORY</text>
+    <text x="22" y="82" fill="#8fdfff" font-family="Arial, sans-serif" font-size="58" font-weight="900">A</text>
+    <text x="110" y="58" fill="#f6fbf8" font-family="Arial, sans-serif" font-size="18" font-weight="700">longer green path</text>
+    <text x="110" y="82" fill="#96a19d" font-family="Arial, sans-serif" font-size="14">more steady IBI agreement</text>
+  </g>
+</svg>

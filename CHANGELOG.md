@@ -1,6 +1,9 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-19 13:37 EDT Web Serial A/B lab: added compact serial telemetry from firmware plus `webserial.html`, a Chrome dashboard with a large raw overlap comparator, BPM trends, beat-event markers, an IBI microscope for magnified millisecond differences, quality bars, and demo mode.
+- 2026-05-19 14:04 EDT timing infographic pass: changed the browser timing chart into an A/B beat ladder where green rungs and a green path show IBI agreement history, while orange rungs show timing disagreement.
+- 2026-05-19 14:07 EDT trust-history pass: restored BPM/beat agreement mapping, added red solo-beat false-positive suspects, made the verdict consider agree/drift/solo history, and added Web Serial auto-reconnect after first permission.
 - 2026-05-19 13:31 EDT PulseSensorPlayground A/B refocus: replaced raw range scoring with two-channel Playground BPM, IBI, beat-event flashes, pickup quality bars, and a `BETTER PICKUP` verdict while preserving compact raw waveform strips.
 - 2026-05-19 13:25 EDT color pass: changed the shared raw comparator graph to light blue for `GPIO35`, light yellow for `GPIO27`, and light green when the live waveforms nearly overlap.
 - 2026-05-19 13:19 EDT two-sensor raw comparator dashboard pass: moved from stacked traces to one large shared-scale graph with cyan `GPIO35` and amber `GPIO27` traces, preserving the original one-screen dashboard rhythm while keeping bottom score and relationship panels.

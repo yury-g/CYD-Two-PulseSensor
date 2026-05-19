@@ -33,6 +33,16 @@ Earlier raw-comparator references:
 
 The raw comparator is still represented on the screen as the two waveform strips. The main focus is now which sensor plays better with the existing PulseSensorPlayground detector.
 
+## Chrome Web Serial A/B Lab
+
+The firmware also emits compact `AB,...` telemetry lines at 115200 baud for a browser dashboard:
+
+```text
+webserial.html
+```
+
+Open it in Chrome, Edge, or Brave from a secure context such as `localhost`, click `Connect`, and choose the CYD serial port. After that first browser permission, the `Auto` toggle can reconnect to the paired port on reload. The browser view shows a larger raw overlap comparator, BPM agreement/drift, beat-event agreement, solo-beat false-positive suspects, pickup quality bars, the current A/B winner, and an IBI microscope that magnifies small millisecond differences between the two detectors. Green highlights mean agreement, orange means drift, and red means solo beat suspects. It also includes a demo mode for checking the layout without hardware attached.
+
 ## Build And Flash
 
 ```sh
