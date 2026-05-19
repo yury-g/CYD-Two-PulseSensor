@@ -6,6 +6,10 @@ Branch: `codex/finger-coach-dashboard-20260519-111641-EDT`
 
 Tested on connected ESP32-2432S028 CYD hardware.
 
+## 2026-05-19 13:04:51 EDT — Best Dual PulseSensor Pin Candidates
+
+Raw pin-scanner testing on the connected ESP32-2432S028 CYD showed `GPIO35` and `GPIO27` as the best two PulseSensor signal candidates. `GPIO22` also showed usable raw signal, but a dashboard experiment using `GPIO22` as the PulseSensor input caused the screen to turn on/off in a reset loop. Use `GPIO35` and `GPIO27` for the first two-PulseSensor dashboard experiment.
+
 ### Tried
 
 - Auto-expanding Signal Dashboard when the PulseSensor signal was not yet qualified.

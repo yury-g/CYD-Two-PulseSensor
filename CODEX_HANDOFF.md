@@ -31,6 +31,19 @@ launcher/codex/finger-coach-dashboard-20260519-111641-EDT
 
 ## Current Known State
 
+### Hardware Finding: Dual PulseSensor Pins
+
+2026-05-19 13:04:51 EDT: on the connected ESP32-2432S028 CYD, raw connector scanning showed `GPIO35` and `GPIO27` as the best two PulseSensor signal candidates. `GPIO22` also showed usable signal in the raw scanner, but an earlier dashboard build using `GPIO22` as the PulseSensor input caused a screen on/off reset loop, so prefer `GPIO35` and `GPIO27` for the first two-sensor dashboard experiment.
+
+Planned two-sensor mapping:
+
+```text
+PulseSensor A signal -> GPIO35
+PulseSensor B signal -> GPIO27
+Power for sensors    -> 3.3V
+Ground for sensors   -> GND
+```
+
 Current working HEAD before this handoff note:
 
 ```text
