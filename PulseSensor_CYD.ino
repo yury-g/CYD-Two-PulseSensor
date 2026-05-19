@@ -660,9 +660,7 @@ void drawDashboardIfChanged() {
   bool panelsChanged = statusChanged ||
                        displayBPM != previousDisplayBPM ||
                        displayIBI != previousDisplayIBI ||
-                       pulseAmplitude != previousPulseAmplitude ||
-                       signalQuality != previousSignalQuality ||
-                       rearmCount != previousRearmCount;
+                       signalQuality != previousSignalQuality;
 
   if (statusChanged) {
     drawHeader();
@@ -858,6 +856,9 @@ void drawMetricPanel(int x, const char* label, int value, const char* unit, bool
 void drawSignalPanel() {
   const int x = 228;
   const int w = 84;
+  char pinLabel[8];
+
+  snprintf(pinLabel, sizeof(pinLabel), "GPIO%d", PULSE_PIN);
 
   tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
   tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_SCREEN_BEAT : COLOR_GRID);
@@ -865,20 +866,10 @@ void drawSignalPanel() {
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
   tft.setCursor(x + 9, PANEL_Y + 8);
-  tft.print("SIGNAL");
+  tft.print("SIG ");
+  tft.print(pinLabel);
 
-  drawQualitySegments(x + 9, PANEL_Y + 21);
-
-  tft.setTextSize(1);
-  tft.setTextColor(lockedSignal ? COLOR_TEAL : COLOR_AMBER, COLOR_PANEL);
-  tft.setCursor(x + 9, PANEL_Y + 39);
-  tft.printf("Q%02d", signalQuality);
-
-  tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
-  tft.setCursor(x + 50, PANEL_Y + 39);
-  tft.printf("R%d", rearmCount);
-
-  drawAmplitudeMeter(x + 9, PANEL_Y + 49, pulseAmplitude);
+  drawQualitySegments(x + 9, PANEL_Y + 28);
 }
 
 void drawQualitySegments(int x, int y) {
