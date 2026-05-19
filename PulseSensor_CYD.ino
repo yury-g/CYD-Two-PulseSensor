@@ -22,7 +22,12 @@
 
 #include <SPI.h>
 #include <TFT_eSPI.h>
+#if __has_include(<XPT2046_Touchscreen_TT.h>)
+#include <XPT2046_Touchscreen_TT.h>
+#else
 #include <XPT2046_Touchscreen.h>
+#endif
+#include <esp_arduino_version.h>
 #define USE_ARDUINO_INTERRUPTS true
 #include <PulseSensorPlayground.h>
 
@@ -34,6 +39,11 @@
 #define LED_GREEN_PIN 16
 #define LED_BLUE_PIN 17
 #define SPEAKER_PIN 26
+
+#define LED_RED_PWM_CH 0
+#define LED_GREEN_PWM_CH 1
+#define LED_BLUE_PWM_CH 2
+#define SPEAKER_PWM_CH 3
 
 #define TOUCH_IRQ 36
 #define TOUCH_MISO 39
@@ -112,6 +122,7 @@
 #define COLOR_TEAL 0x05F3
 #define COLOR_RED 0xF800
 #define COLOR_RED_DARK 0x6000
+#define COLOR_SCREEN_BEAT COLOR_CYAN
 #define COLOR_AMBER 0xFBE0
 
 enum SignalCoachState {
@@ -134,6 +145,10 @@ const uint16_t BEAT_CHIME_FREQUENCIES[BEAT_CHIME_STEP_COUNT] = {262, 392, 523, 6
 const uint8_t BEAT_CHIME_DUTIES[BEAT_CHIME_STEP_COUNT] = {56, 42, 30, 18};
 const uint16_t BEAT_CHIME_DURATIONS_MS[BEAT_CHIME_STEP_COUNT] = {58, 66, 82, 118};
 
+const uint16_t SIGNAL_HARMONY_FREQUENCIES[] = {523, 659, 784, 988, 1175};
+const uint8_t SIGNAL_HARMONY_DUTIES[] = {48, 40, 30};
+const uint16_t SIGNAL_HARMONY_DURATIONS_MS[] = {72, 84, 128};
+
 // ===== LIVE SENSOR STATE =====
 
 int currentSignal = 512;
@@ -149,6 +164,7 @@ unsigned long lastGraphDraw = 0;
 unsigned long lastSerialPrint = 0;
 unsigned long lastDetectorRearmTime = 0;
 unsigned long lastVolumeTouchTime = 0;
+unsigned long lastSignalHarmonyTime = 0;
 
 bool lockedSignal = false;
 bool previousLockedSignal = false;
@@ -174,6 +190,11 @@ unsigned long beatChimeNextStepTime = 0;
 bool beatHeartNeedsRedraw = true;
 uint8_t speakerVolume = VOLUME_START;
 
+bool signalHarmonyPlaying = false;
+uint8_t signalHarmonyStep = 0;
+uint8_t signalHarmonyBaseNote = 0;
+unsigned long signalHarmonyNextStepTime = 0;
+
 // ===== GRAPH STATE =====
 
 int graphX = 0;
@@ -195,9 +216,16 @@ void setupSpeaker();
 void setupTouch();
 void readTouchControls();
 bool handleVolumeTouch(int16_t x, int16_t y);
+void cydLedcAttach(uint8_t pin, uint8_t channel, uint32_t frequency, uint8_t resolution);
+void cydLedcWrite(uint8_t pin, uint8_t channel, uint32_t duty);
+void cydLedcWriteTone(uint8_t pin, uint8_t channel, uint32_t frequency);
 uint16_t scaledChimeDuty(uint8_t step);
 void startBeatChime();
 void updateBeatChime();
+uint16_t scaledSignalHarmonyDuty(uint8_t duty);
+void startSignalHarmony(int quality);
+void updateSignalHarmony();
+void stopSignalHarmony();
 void triggerBeatEffects();
 void setupPulseSensor();
 void readPulseSensor();
@@ -215,6 +243,7 @@ void drawVolumeControl();
 void drawGraphFrame();
 void drawGraphColumnBackground(int localX);
 void drawThresholdMarker(int localX);
+int signalToGraphY(int signal);
 void drawWaveform();
 void drawPanels();
 void drawMetricPanel(int x, const char* label, int value, const char* unit, bool valid);
@@ -251,6 +280,7 @@ void loop() {
   readTouchControls();
   updateLED();
   updateBeatChime();
+  updateSignalHarmony();
   drawBeatHeart();
   drawWaveform();
   drawDashboardIfChanged();
@@ -266,19 +296,19 @@ void loop() {
 // ===== HARDWARE SETUP =====
 
 void setupLED() {
-  // ESP32 Arduino Core 3.x API. The CYD RGB LED is active-low.
-  ledcAttach(LED_RED_PIN, 5000, 8);
-  ledcAttach(LED_GREEN_PIN, 5000, 8);
-  ledcAttach(LED_BLUE_PIN, 5000, 8);
+  // The CYD RGB LED is active-low.
+  cydLedcAttach(LED_RED_PIN, LED_RED_PWM_CH, 5000, 8);
+  cydLedcAttach(LED_GREEN_PIN, LED_GREEN_PWM_CH, 5000, 8);
+  cydLedcAttach(LED_BLUE_PIN, LED_BLUE_PWM_CH, 5000, 8);
 
   setRedLED(0);
-  ledcWrite(LED_GREEN_PIN, 255);
-  ledcWrite(LED_BLUE_PIN, 255);
+  cydLedcWrite(LED_GREEN_PIN, LED_GREEN_PWM_CH, 255);
+  cydLedcWrite(LED_BLUE_PIN, LED_BLUE_PWM_CH, 255);
 }
 
 void setRedLED(int brightness) {
   brightness = constrain(brightness, 0, 255);
-  ledcWrite(LED_RED_PIN, 255 - brightness);
+  cydLedcWrite(LED_RED_PIN, LED_RED_PWM_CH, 255 - brightness);
 }
 
 void updateLED() {
@@ -294,8 +324,8 @@ void updateLED() {
 }
 
 void setupSpeaker() {
-  ledcAttach(SPEAKER_PIN, BEAT_CHIME_FREQUENCIES[0], SPEAKER_BITS);
-  ledcWrite(SPEAKER_PIN, 0);
+  cydLedcAttach(SPEAKER_PIN, SPEAKER_PWM_CH, BEAT_CHIME_FREQUENCIES[0], SPEAKER_BITS);
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
 }
 
 void setupTouch() {
@@ -330,7 +360,7 @@ bool handleVolumeTouch(int16_t x, int16_t y) {
 
   drawVolumeControl();
   if (beatTonePlaying) {
-    ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
+    cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledChimeDuty(beatChimeStep));
   }
   return true;
 }
@@ -341,9 +371,10 @@ uint16_t scaledChimeDuty(uint8_t step) {
 }
 
 void startBeatChime() {
+  stopSignalHarmony();
   beatChimeStep = 0;
-  ledcWriteTone(SPEAKER_PIN, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
-  ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
+  cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledChimeDuty(beatChimeStep));
   beatChimeNextStepTime = millis() + BEAT_CHIME_DURATIONS_MS[beatChimeStep];
   beatTonePlaying = true;
 }
@@ -354,15 +385,82 @@ void updateBeatChime() {
 
   beatChimeStep++;
   if (beatChimeStep < BEAT_CHIME_STEP_COUNT) {
-    ledcWriteTone(SPEAKER_PIN, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
-    ledcWrite(SPEAKER_PIN, scaledChimeDuty(beatChimeStep));
+    cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, BEAT_CHIME_FREQUENCIES[beatChimeStep]);
+    cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledChimeDuty(beatChimeStep));
     beatChimeNextStepTime = millis() + BEAT_CHIME_DURATIONS_MS[beatChimeStep];
     return;
   }
 
-  ledcWrite(SPEAKER_PIN, 0);
-  ledcWriteTone(SPEAKER_PIN, 0);
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
   beatTonePlaying = false;
+}
+
+uint16_t scaledSignalHarmonyDuty(uint8_t duty) {
+  if (speakerVolume == 0) return 0;
+  return max<uint16_t>((duty * speakerVolume) / VOLUME_MAX, 4);
+}
+
+void startSignalHarmony(int quality) {
+  if (speakerVolume == 0 || beatTonePlaying || signalHarmonyPlaying) return;
+  if (millis() - lastSignalHarmonyTime < 180) return;
+
+  signalHarmonyBaseNote = constrain(map(quality, 1, SIGNAL_QUALITY_STEPS, 0, 2), 0, 2);
+  signalHarmonyStep = 0;
+  signalHarmonyPlaying = true;
+  lastSignalHarmonyTime = millis();
+
+  cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, SIGNAL_HARMONY_FREQUENCIES[signalHarmonyBaseNote]);
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledSignalHarmonyDuty(SIGNAL_HARMONY_DUTIES[signalHarmonyStep]));
+  signalHarmonyNextStepTime = millis() + SIGNAL_HARMONY_DURATIONS_MS[signalHarmonyStep];
+}
+
+void updateSignalHarmony() {
+  if (!signalHarmonyPlaying) return;
+  if ((long)(millis() - signalHarmonyNextStepTime) < 0) return;
+
+  signalHarmonyStep++;
+  if (signalHarmonyStep < 3) {
+    uint8_t note = min<uint8_t>(signalHarmonyBaseNote + signalHarmonyStep, 4);
+    cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, SIGNAL_HARMONY_FREQUENCIES[note]);
+    cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, scaledSignalHarmonyDuty(SIGNAL_HARMONY_DUTIES[signalHarmonyStep]));
+    signalHarmonyNextStepTime = millis() + SIGNAL_HARMONY_DURATIONS_MS[signalHarmonyStep];
+    return;
+  }
+
+  stopSignalHarmony();
+}
+
+void stopSignalHarmony() {
+  if (!signalHarmonyPlaying) return;
+  cydLedcWrite(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  cydLedcWriteTone(SPEAKER_PIN, SPEAKER_PWM_CH, 0);
+  signalHarmonyPlaying = false;
+}
+
+void cydLedcAttach(uint8_t pin, uint8_t channel, uint32_t frequency, uint8_t resolution) {
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  ledcAttach(pin, frequency, resolution);
+#else
+  ledcSetup(channel, frequency, resolution);
+  ledcAttachPin(pin, channel);
+#endif
+}
+
+void cydLedcWrite(uint8_t pin, uint8_t channel, uint32_t duty) {
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  ledcWrite(pin, duty);
+#else
+  ledcWrite(channel, duty);
+#endif
+}
+
+void cydLedcWriteTone(uint8_t pin, uint8_t channel, uint32_t frequency) {
+#if ESP_ARDUINO_VERSION_MAJOR >= 3
+  ledcWriteTone(pin, frequency);
+#else
+  ledcWriteTone(channel, frequency);
+#endif
 }
 
 void triggerBeatEffects() {
@@ -399,6 +497,7 @@ void readPulseSensor() {
     int bpm = pulseSensor.getBeatsPerMinute();
     int ibi = pulseSensor.getInterBeatIntervalMs();
     bool qualified = isQualifiedBeat(bpm, ibi, pulseAmplitude);
+    int previousQuality = signalQuality;
 
     lastBeatTime = millis();
 
@@ -414,6 +513,9 @@ void readPulseSensor() {
     }
 
     lockedSignal = signalQuality >= LOCK_QUALITY_STEPS;
+    if (signalQuality > previousQuality && !lockedSignal) {
+      startSignalHarmony(signalQuality);
+    }
 
     // Blink/fade the rear red LED only after the beat is qualified.
     if (lockedSignal && qualified) {
@@ -568,7 +670,7 @@ void drawHeader() {
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
   tft.setCursor(10, 8);
-  tft.print("LIVE BEAT DETECTION");
+  tft.print("PulseSensor.com");
   drawVolumeControl();
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
@@ -617,6 +719,10 @@ void drawGraphFrame() {
   tft.setTextColor(COLOR_MUTED, COLOR_BG);
   tft.setCursor(GRAPH_X + 6, GRAPH_Y + 5);
   tft.print("LIVE LINE");
+
+  tft.setCursor(GRAPH_X + GRAPH_W - 48, GRAPH_Y + 5);
+  tft.print("THR ");
+  tft.print(PULSE_THRESHOLD);
 }
 
 void drawGraphColumnBackground(int localX) {
@@ -635,13 +741,20 @@ void drawGraphColumnBackground(int localX) {
 }
 
 void drawThresholdMarker(int localX) {
-  int y = map(PULSE_THRESHOLD, minSignal, maxSignal, GRAPH_Y + GRAPH_H - 8, GRAPH_Y + 8);
-  y = constrain(y, GRAPH_Y + 8, GRAPH_Y + GRAPH_H - 8);
+  int y = signalToGraphY(PULSE_THRESHOLD);
 
   if (localX % 6 == 0) {
-    uint16_t color = insideBeatWindow ? COLOR_AMBER : COLOR_CYAN_DARK;
-    tft.drawPixel(GRAPH_X + localX, y, color);
+    tft.drawPixel(GRAPH_X + localX, y, COLOR_SCREEN_BEAT);
   }
+}
+
+int signalToGraphY(int signal) {
+  if (minSignal == maxSignal) {
+    return GRAPH_Y + GRAPH_H / 2;
+  }
+
+  int y = map(signal, minSignal, maxSignal, GRAPH_Y + GRAPH_H - 8, GRAPH_Y + 8);
+  return constrain(y, GRAPH_Y + 8, GRAPH_Y + GRAPH_H - 8);
 }
 
 // ===== LIVE GRAPH =====
@@ -650,8 +763,7 @@ void drawWaveform() {
   if (millis() - lastGraphDraw < 20) return;
   lastGraphDraw = millis();
 
-  int y = map(currentSignal, minSignal, maxSignal, GRAPH_Y + GRAPH_H - 8, GRAPH_Y + 8);
-  y = constrain(y, GRAPH_Y + 8, GRAPH_Y + GRAPH_H - 8);
+  int y = signalToGraphY(currentSignal);
 
   drawGraphColumnBackground(graphX);
   drawGraphColumnBackground((graphX + 1) % GRAPH_W);
@@ -666,7 +778,7 @@ void drawWaveform() {
   }
 
   if (ledBrightness > 180) {
-    tft.fillCircle(GRAPH_X + graphX, y, 3, COLOR_RED);
+    tft.fillCircle(GRAPH_X + graphX, y, 3, COLOR_SCREEN_BEAT);
   }
 
   lastGraphY = y;
@@ -725,7 +837,7 @@ void drawSignalPanel() {
   const int w = 84;
 
   tft.fillRoundRect(x, PANEL_Y, w, PANEL_H, 6, COLOR_PANEL);
-  tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_RED : COLOR_GRID);
+  tft.drawRoundRect(x, PANEL_Y, w, PANEL_H, 6, lockedSignal ? COLOR_SCREEN_BEAT : COLOR_GRID);
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_MUTED, COLOR_PANEL);
@@ -796,7 +908,7 @@ void drawBeatHeart() {
   const int clearH = HEART_MAX_SIZE * 2 + 7;
 
   uint16_t heartColor = blendRed(ledBrightness);
-  uint16_t outlineColor = liveTraceColor();
+  uint16_t outlineColor = COLOR_SCREEN_BEAT;
   tft.fillRect(clearX, clearY, clearW, clearH, COLOR_BG);
   fillHeartShape(centerX, centerY, size + 2, outlineColor);
   fillHeartShape(centerX, centerY, size, heartColor);
