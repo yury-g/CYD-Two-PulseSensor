@@ -4,7 +4,7 @@
 
 Branch: `codex/finger-coach-dashboard-20260519-111641-EDT`
 
-Tested on connected ESP32-2432S028R CYD hardware.
+Tested on connected ESP32-2432S028 CYD hardware.
 
 ### Tried
 

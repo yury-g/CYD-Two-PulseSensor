@@ -125,7 +125,7 @@ The `SIG GPIO35` label is intentionally compact because a future revision may sh
 
 ## Hardware Reference
 
-- **Board:** ESP32-2432S028R CYD
+- **Board:** ESP32-2432S028 CYD
 - **Display:** ILI9341 320&times;240 TFT
 - **Sensor input:** PulseSensor signal on `GPIO 35`
 - **RGB LED:** onboard CYD LED, active-low PWM

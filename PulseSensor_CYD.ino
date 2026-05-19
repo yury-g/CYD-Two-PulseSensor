@@ -3,7 +3,7 @@
  * One-screen PulseSensor dashboard for ESP32 CYD (Cheap Yellow Display).
  *
  * Hardware:
- *   Board:        ESP32-2432S028R (CYD)
+ *   Board:        ESP32-2432S028 (CYD)
  *   Display:      ILI9341 320x240 TFT
  *   PulseSensor:  signal wire on GPIO 35 (found with AnalogPinScanner)
  *   RGB LED:      Red=4, Green=16, Blue=17 (active-low onboard CYD LED)

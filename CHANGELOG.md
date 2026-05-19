@@ -38,7 +38,7 @@
 - Added automatic detector re-arm when the waveform looks alive but PulseSensorPlayground is not emitting beat events.
 - Matched PulseSensorPlayground's ESP32 expectations with `analogReadResolution(10)`.
 - Added `flash-cyd.sh` helper for repeatable Arduino CLI builds with the required `TFT_eSPI` CYD compile flags.
-- Verified on connected ESP32-2432S028R CYD hardware.
+- Verified on connected ESP32-2432S028 CYD hardware.
 
 ## v0.2.0 — 2026-04-08
 **Complete .ino written (compilation pending)**
