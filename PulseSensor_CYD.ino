@@ -33,7 +33,7 @@
 
 // ===== CYD PINS =====
 
-#define PULSE_PIN 22
+#define PULSE_PIN 35
 #define BACKLIGHT 21
 #define LED_RED_PIN 4
 #define LED_GREEN_PIN 16
