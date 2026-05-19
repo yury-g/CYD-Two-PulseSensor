@@ -29,3 +29,11 @@ Prior success:
 Known dead end:
 
 - `GPIO22` produced usable raw scanner signal, but caused a reset/screen on-off loop in a dashboard build. Keep it out of this two-sensor dashboard until there is a specific reason to revisit it.
+
+## 2026-05-19 13:14:49 EDT — Flicker Reduction Pass
+
+Status: hardware-requested fix after the textbook visual build showed distracting fast flicker on the CYD.
+
+Decision: keep live graph drawing at about 40 Hz, but stop repainting all text and metric panels every graph frame. Text and summary values now update about every 250 ms, and the bottom metric frames are drawn once as static UI.
+
+Why: the CYD TFT shows visible shimmer when large text/panel regions are repeatedly erased and redrawn. Raw traces can update quickly, but labels, scores, and relationship text should be calmer.

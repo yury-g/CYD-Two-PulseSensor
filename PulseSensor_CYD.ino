@@ -34,6 +34,8 @@
 #define METRIC_Y 188
 #define ADC_MAX_VALUE 4095
 #define HISTORY_SIZE 64
+#define GRAPH_INTERVAL_MS 25
+#define TEXT_INTERVAL_MS 250
 
 // ===== COLORS (RGB565) =====
 
@@ -71,6 +73,7 @@ int historyIndex = 0;
 bool historyFilled = false;
 
 unsigned long lastDraw = 0;
+unsigned long lastTextDraw = 0;
 unsigned long lastSerial = 0;
 
 void setup();
@@ -84,9 +87,11 @@ int signalToY(const Channel& channel, int graphY);
 void drawStaticScreen();
 void drawGraphFrame(int y, const char* title, const char* note, uint16_t color);
 void drawGraphColumn();
-void drawGraphStats(int y, const Channel& channel);
+void drawGraphStats();
+void drawGraphStatsForChannel(int y, const Channel& channel);
+void drawMetricFrames();
 void drawMetrics();
-void drawChannelMetric(int x, const Channel& channel, bool best);
+void drawChannelMetric(int x, const Channel& channel, bool best, bool previousBest);
 void drawRelationMetric(int corr);
 void drawCenteredText(const char* text, int x, int y, int w, uint16_t color, uint16_t bg);
 int correlationPercent();
@@ -114,9 +119,14 @@ void loop() {
   updateChannel(channelB);
   updateHistory();
 
-  if (millis() - lastDraw >= 25) {
+  if (millis() - lastDraw >= GRAPH_INTERVAL_MS) {
     lastDraw = millis();
     drawGraphColumn();
+  }
+
+  if (millis() - lastTextDraw >= TEXT_INTERVAL_MS) {
+    lastTextDraw = millis();
+    drawGraphStats();
     drawMetrics();
   }
 
@@ -220,6 +230,7 @@ void drawStaticScreen() {
   drawGraphFrame(GRAPH_A_Y, "A GPIO35", "cleaner input candidate", COLOR_A);
   drawGraphFrame(GRAPH_B_Y, "B GPIO27", "second input candidate", COLOR_B);
   tft.drawFastHLine(0, METRIC_Y - 7, SCREEN_WIDTH, COLOR_GRID);
+  drawMetricFrames();
 }
 
 void drawGraphFrame(int y, const char* title, const char* note, uint16_t color) {
@@ -264,12 +275,14 @@ void drawGraphColumn() {
     tft.fillRect(GRAPH_X + 1, GRAPH_A_Y + 1, GRAPH_W - 2, GRAPH_H - 2, COLOR_BG);
     tft.fillRect(GRAPH_X + 1, GRAPH_B_Y + 1, GRAPH_W - 2, GRAPH_H - 2, COLOR_BG);
   }
-
-  drawGraphStats(GRAPH_A_Y, channelA);
-  drawGraphStats(GRAPH_B_Y, channelB);
 }
 
-void drawGraphStats(int y, const Channel& channel) {
+void drawGraphStats() {
+  drawGraphStatsForChannel(GRAPH_A_Y, channelA);
+  drawGraphStatsForChannel(GRAPH_B_Y, channelB);
+}
+
+void drawGraphStatsForChannel(int y, const Channel& channel) {
   tft.fillRect(255, y + 5, 54, 24, COLOR_BG);
   tft.setTextSize(1);
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
@@ -280,49 +293,62 @@ void drawGraphStats(int y, const Channel& channel) {
   tft.printf("rng%5d", channel.range);
 }
 
-void drawMetrics() {
-  bool aBest = channelA.quality >= channelB.quality;
-  int corr = correlationPercent();
+void drawMetricFrames() {
+  tft.drawRect(8, METRIC_Y, 88, 42, COLOR_A);
+  tft.drawRect(104, METRIC_Y, 88, 42, COLOR_B);
+  tft.drawRect(200, METRIC_Y, 112, 42, COLOR_DIM);
 
-  tft.fillRect(0, METRIC_Y, SCREEN_WIDTH, SCREEN_HEIGHT - METRIC_Y, COLOR_BG);
-  drawChannelMetric(8, channelA, aBest);
-  drawChannelMetric(104, channelB, !aBest);
-  drawRelationMetric(corr);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_A, COLOR_BG);
+  tft.setCursor(14, METRIC_Y + 6);
+  tft.print("A SCORE");
+  tft.setTextColor(COLOR_B, COLOR_BG);
+  tft.setCursor(110, METRIC_Y + 6);
+  tft.print("B SCORE");
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(206, METRIC_Y + 6);
+  tft.print("RELATION");
 }
 
-void drawChannelMetric(int x, const Channel& channel, bool best) {
-  tft.drawRect(x, METRIC_Y, 88, 42, channel.color);
-  tft.setTextSize(1);
-  tft.setTextColor(channel.color, COLOR_BG);
-  tft.setCursor(x + 6, METRIC_Y + 6);
-  if (channel.pin == PULSE_A_PIN) {
-    tft.print("A SCORE");
-  } else {
-    tft.print("B SCORE");
-  }
+void drawMetrics() {
+  static bool previousABest = false;
+  static bool previousBBest = false;
+  bool aBest = channelA.quality >= channelB.quality;
+  bool bBest = !aBest;
+  int corr = correlationPercent();
 
+  drawChannelMetric(8, channelA, aBest, previousABest);
+  drawChannelMetric(104, channelB, bBest, previousBBest);
+  drawRelationMetric(corr);
+
+  previousABest = aBest;
+  previousBBest = bBest;
+}
+
+void drawChannelMetric(int x, const Channel& channel, bool best, bool previousBest) {
+  tft.fillRect(x + 5, METRIC_Y + 18, 48, 18, COLOR_BG);
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setTextSize(2);
   tft.setCursor(x + 6, METRIC_Y + 20);
   tft.printf("%3d", channel.quality);
 
-  tft.setTextColor(best ? COLOR_GREEN : COLOR_DIM, COLOR_BG);
-  tft.setTextSize(1);
-  tft.setCursor(x + 58, METRIC_Y + 29);
-  tft.print(best ? "BEST" : "    ");
+  if (best != previousBest) {
+    tft.fillRect(x + 56, METRIC_Y + 27, 28, 10, COLOR_BG);
+    tft.setTextColor(best ? COLOR_GREEN : COLOR_DIM, COLOR_BG);
+    tft.setTextSize(1);
+    tft.setCursor(x + 58, METRIC_Y + 29);
+    tft.print(best ? "BEST" : "    ");
+  }
 }
 
 void drawRelationMetric(int corr) {
-  tft.drawRect(200, METRIC_Y, 112, 42, COLOR_DIM);
-  tft.setTextSize(1);
+  tft.fillRect(205, METRIC_Y + 18, 60, 18, COLOR_BG);
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(206, METRIC_Y + 6);
-  tft.print("RELATION");
-
   tft.setTextSize(2);
   tft.setCursor(206, METRIC_Y + 20);
   tft.printf("%+d%%", corr);
 
+  tft.fillRect(268, METRIC_Y + 27, 38, 10, COLOR_BG);
   tft.setTextSize(1);
   tft.setTextColor(COLOR_DIM, COLOR_BG);
   tft.setCursor(270, METRIC_Y + 29);
