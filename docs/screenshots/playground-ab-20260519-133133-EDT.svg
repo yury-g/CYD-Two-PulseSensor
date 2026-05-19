@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 320 240" role="img" aria-label="CYD two PulseSensor Playground A/B BPM pickup test mockup">
+  <rect width="320" height="240" fill="#000000"/>
+
+  <text x="10" y="14" fill="#ffffff" font-family="Arial, sans-serif" font-size="8" font-weight="700">Two PulseSensor</text>
+  <text x="10" y="29" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">Playground BPM / IBI / beat A-B</text>
+  <text x="234" y="14" fill="#ffffff" font-family="Arial, sans-serif" font-size="8">2026-05-19</text>
+  <text x="286" y="29" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">v0.3</text>
+  <line x1="0" y1="33" x2="320" y2="33" stroke="#18e3e3" stroke-opacity="0.35"/>
+
+  <text x="13" y="37" fill="#8fdfff" font-family="Arial, sans-serif" font-size="7" font-weight="700">A GPIO35</text>
+  <text x="86" y="37" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">raw truth strip</text>
+  <rect x="8" y="42" width="304" height="38" fill="none" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <g stroke="#101410">
+    <path d="M8 42V80 M46 42V80 M84 42V80 M122 42V80 M160 42V80 M198 42V80 M236 42V80 M274 42V80 M312 42V80"/>
+    <path d="M8 61H312"/>
+  </g>
+  <polyline points="8,63 24,61 40,58 56,49 72,61 88,72 104,66 120,59 136,50 152,62 168,73 184,66 200,58 216,48 232,60 248,72 264,67 280,58 296,50 312,61" fill="none" stroke="#8fdfff" stroke-width="2"/>
+  <circle cx="216" cy="48" r="3" fill="#9bff9b"/>
+
+  <text x="13" y="83" fill="#fff9a6" font-family="Arial, sans-serif" font-size="7" font-weight="700">B GPIO27</text>
+  <text x="86" y="83" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">raw truth strip</text>
+  <rect x="8" y="88" width="304" height="38" fill="none" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <g stroke="#101410">
+    <path d="M8 88V126 M46 88V126 M84 88V126 M122 88V126 M160 88V126 M198 88V126 M236 88V126 M274 88V126 M312 88V126"/>
+    <path d="M8 107H312"/>
+  </g>
+  <polyline points="8,110 24,108 40,105 56,98 72,107 88,118 104,113 120,107 136,100 152,110 168,119 184,114 200,108 216,101 232,110 248,120 264,115 280,109 296,101 312,111" fill="none" stroke="#fff9a6" stroke-width="2"/>
+  <circle cx="232" cy="110" r="3" fill="#9bff9b"/>
+
+  <rect x="8" y="160" width="98" height="72" rx="6" fill="#080808" stroke="#8fdfff"/>
+  <text x="17" y="177" fill="#8fdfff" font-family="Arial, sans-serif" font-size="8" font-weight="700">A GPIO35</text>
+  <text x="17" y="206" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700"> 72</text>
+  <text x="74" y="189" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">BPM</text>
+  <text x="74" y="201" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7"> 833</text>
+  <circle cx="91" cy="172" r="5" fill="#9bff9b"/>
+  <rect x="17" y="214" width="78" height="9" fill="#000000" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <rect x="17" y="214" width="67" height="9" fill="#00ff66"/>
+
+  <rect x="111" y="160" width="98" height="72" rx="6" fill="#080808" stroke="#fff9a6"/>
+  <text x="120" y="177" fill="#fff9a6" font-family="Arial, sans-serif" font-size="8" font-weight="700">B GPIO27</text>
+  <text x="120" y="206" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700"> 69</text>
+  <text x="177" y="189" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">BPM</text>
+  <text x="177" y="201" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7"> 870</text>
+  <circle cx="194" cy="172" r="5" fill="#191c19"/>
+  <rect x="120" y="214" width="78" height="9" fill="#000000" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <rect x="120" y="214" width="48" height="9" fill="#ffde00"/>
+
+  <rect x="214" y="160" width="98" height="72" rx="6" fill="#080808" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <text x="223" y="177" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">BETTER PICKUP</text>
+  <text x="223" y="202" fill="#8fdfff" font-family="Arial, sans-serif" font-size="18" font-weight="700">A</text>
+  <text x="223" y="220" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">BPM diff 03</text>
+  <text x="223" y="232" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">beats 14/09</text>
+</svg>

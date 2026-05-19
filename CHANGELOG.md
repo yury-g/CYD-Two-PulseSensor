@@ -1,6 +1,9 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-19 13:31 EDT PulseSensorPlayground A/B refocus: replaced raw range scoring with two-channel Playground BPM, IBI, beat-event flashes, pickup quality bars, and a `BETTER PICKUP` verdict while preserving compact raw waveform strips.
+- 2026-05-19 13:25 EDT color pass: changed the shared raw comparator graph to light blue for `GPIO35`, light yellow for `GPIO27`, and light green when the live waveforms nearly overlap.
+- 2026-05-19 13:19 EDT two-sensor raw comparator dashboard pass: moved from stacked traces to one large shared-scale graph with cyan `GPIO35` and amber `GPIO27` traces, preserving the original one-screen dashboard rhythm while keeping bottom score and relationship panels.
 - Linked the `Why GPIO 35` note to the standalone `CYD_Analog_Pin_Scanner` diagnostic repo.
 - 2026-05-19 11:39 EDT hardware experiment: tried expanded Signal Dashboard / Finger Coach UI with lock-game visuals and coaching sounds on branch `codex/finger-coach-dashboard-20260519-111641-EDT`; rejected for IRL use because the CYD display felt too busy and the active bottom panel flickered / over-drew. Kept only the useful graph threshold affordance: cyan dotted threshold line plus `THR 550` label.
 - Restored the working one-screen dashboard layout and added a small signal-quality harmony tied to bottom-right `SIGNAL` quality progress.

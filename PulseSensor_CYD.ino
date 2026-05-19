@@ -1,9 +1,9 @@
 /*
- * CYD Two PulseSensor Comparator
+ * CYD Two PulseSensor Playground A/B
  *
- * Minimal ESP32-2432S028 CYD experiment for comparing two PulseSensor signal
- * candidates side by side. This intentionally reads raw ADC values instead of
- * using PulseSensorPlayground so we can judge wiring and signal quality first.
+ * ESP32-2432S028 CYD experiment for comparing how two PulseSensor hardware
+ * candidates work with the existing PulseSensorPlayground BPM, IBI, and
+ * beat-event detector.
  *
  * Current hardware-tested mapping:
  *   PulseSensor A purple signal -> GPIO35
@@ -13,7 +13,8 @@
  */
 
 #include <TFT_eSPI.h>
-#include <math.h>
+#define USE_ARDUINO_INTERRUPTS true
+#include <PulseSensorPlayground.h>
 
 // ===== CYD PINS =====
 
@@ -21,190 +22,280 @@
 #define PULSE_B_PIN 27
 #define BACKLIGHT_PIN 21
 
+// ===== PULSESENSOR SETTINGS =====
+
+#define PULSE_THRESHOLD 550
+#define NO_BEAT_TIMEOUT 3000
+#define MIN_QUALIFIED_BPM 40
+#define MAX_QUALIFIED_BPM 180
+#define MIN_QUALIFIED_IBI 333
+#define MAX_QUALIFIED_IBI 1500
+#define MIN_QUALIFIED_AMPLITUDE 20
+#define MIN_LIVE_RANGE 80
+#define LOCK_QUALIFIED_BEATS 4
+
+// ===== APP VERSION =====
+
+#define APP_TITLE "Two PulseSensor"
+#define APP_VERSION "v0.3"
+#define APP_DATE "2026-05-19"
+
 // ===== SCREEN =====
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
-#define HEADER_H 36
-#define GRAPH_X 8
-#define GRAPH_W 304
-#define GRAPH_A_Y 50
-#define GRAPH_B_Y 121
-#define GRAPH_H 52
-#define METRIC_Y 188
-#define ADC_MAX_VALUE 4095
-#define HISTORY_SIZE 64
+#define HEADER_H 34
+#define WAVE_X 8
+#define WAVE_W 304
+#define WAVE_A_Y 45
+#define WAVE_B_Y 94
+#define WAVE_H 34
+#define VERDICT_Y 132
+#define PANEL_Y 160
+#define PANEL_H 72
+#define PANEL_W 98
 #define GRAPH_INTERVAL_MS 25
 #define TEXT_INTERVAL_MS 250
+#define SAMPLE_MAX_VALUE 1023
 
 // ===== COLORS (RGB565) =====
 
 #define COLOR_BG 0x0000
 #define COLOR_PANEL 0x0841
+#define COLOR_PANEL_DARK 0x0400
 #define COLOR_GRID 0x18E3
+#define COLOR_GRID_SOFT 0x10A2
 #define COLOR_TEXT 0xFFFF
 #define COLOR_DIM 0x8C71
-#define COLOR_A 0x07FF
-#define COLOR_B 0xFBE0
-#define COLOR_GREEN 0x07E0
-#define COLOR_WARN 0xF800
+#define COLOR_A 0x8EFF
+#define COLOR_B 0xFFD4
+#define COLOR_OVERLAP 0x9FF3
+#define COLOR_GOOD 0x07E0
+#define COLOR_WARN 0xFBE0
+#define COLOR_BAD 0xF800
 
-struct Channel {
-  const char* name;
+struct SensorChannel {
+  const char* label;
+  const char* pinLabel;
   uint8_t pin;
+  uint8_t index;
   uint16_t color;
-  int raw;
+  int sample;
   int minValue;
   int maxValue;
   int range;
+  int bpm;
+  int ibi;
+  int amplitude;
+  int previousIbi;
   int quality;
+  int qualifiedBeatStreak;
+  int beatCount;
   int lastY;
+  unsigned long lastBeatMs;
+  unsigned long lastQualifiedBeatMs;
+  unsigned long beatFlashUntilMs;
+  unsigned long lastRangeDecayMs;
+  bool beatNow;
+  bool insideBeat;
+  bool locked;
 };
 
 TFT_eSPI tft = TFT_eSPI();
+PulseSensorPlayground pulseSensor(2);
 
-Channel channelA = {"GPIO35", PULSE_A_PIN, COLOR_A, 2048, ADC_MAX_VALUE, 0, 0, 0, GRAPH_A_Y + GRAPH_H / 2};
-Channel channelB = {"GPIO27", PULSE_B_PIN, COLOR_B, 2048, ADC_MAX_VALUE, 0, 0, 0, GRAPH_B_Y + GRAPH_H / 2};
+SensorChannel channelA = {"A", "GPIO35", PULSE_A_PIN, 0, COLOR_A, 512, 512, 512, 0, 0, 0, 0, 0, 0, 0, 0, WAVE_A_Y + WAVE_H / 2, 0, 0, 0, 0, false, false, false};
+SensorChannel channelB = {"B", "GPIO27", PULSE_B_PIN, 1, COLOR_B, 512, 512, 512, 0, 0, 0, 0, 0, 0, 0, 0, WAVE_B_Y + WAVE_H / 2, 0, 0, 0, 0, false, false, false};
 
 int graphX = 0;
-int historyA[HISTORY_SIZE];
-int historyB[HISTORY_SIZE];
-int historyIndex = 0;
-bool historyFilled = false;
-
-unsigned long lastDraw = 0;
+unsigned long lastGraphDraw = 0;
 unsigned long lastTextDraw = 0;
 unsigned long lastSerial = 0;
+bool pulseSensorReady = false;
 
 void setup();
 void loop();
-void setupAdc();
-int readAverage(uint8_t pin);
-void updateChannel(Channel& channel);
-void updateHistory();
-int scoreChannel(const Channel& channel);
-int signalToY(const Channel& channel, int graphY);
+void setupPulseSensor();
+void updateSensor(SensorChannel& channel);
+void updateLiveRange(SensorChannel& channel);
+bool isQualifiedBeat(const SensorChannel& channel, int bpm, int ibi);
+void updatePickupScore(SensorChannel& channel, bool qualified, int bpm, int ibi);
+void decayPickupScore(SensorChannel& channel);
+int sampleToY(const SensorChannel& channel, int waveY);
 void drawStaticScreen();
-void drawGraphFrame(int y, const char* title, const char* note, uint16_t color);
-void drawGraphColumn();
-void drawGraphStats();
-void drawGraphStatsForChannel(int y, const Channel& channel);
-void drawMetricFrames();
+void drawWaveFrame(int y, const SensorChannel& channel);
+void drawWaveColumnBackground(int localX, int y);
+void drawWaveforms();
+void drawPanelFrames();
 void drawMetrics();
-void drawChannelMetric(int x, const Channel& channel, bool best, bool previousBest);
-void drawRelationMetric(int corr);
-void drawCenteredText(const char* text, int x, int y, int w, uint16_t color, uint16_t bg);
-int correlationPercent();
-const char* relationLabel(int corr);
-bool isRailed(int value);
+void drawSensorPanel(int x, SensorChannel& channel);
+void drawVerdictPanel();
+void drawQualityBar(int x, int y, int w, int value);
+void drawBeatGlyph(int x, int y, const SensorChannel& channel);
+void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg);
+const char* winnerLabel();
+int bpmDelta();
 
 void setup() {
   Serial.begin(115200);
   delay(100);
-  Serial.println("CYD Two PulseSensor Comparator");
+  Serial.println("CYD Two PulseSensor Playground A/B");
 
   pinMode(BACKLIGHT_PIN, OUTPUT);
   digitalWrite(BACKLIGHT_PIN, HIGH);
 
-  setupAdc();
-
   tft.init();
   tft.setRotation(1);
   tft.fillScreen(COLOR_BG);
+
+  setupPulseSensor();
   drawStaticScreen();
 }
 
 void loop() {
-  updateChannel(channelA);
-  updateChannel(channelB);
-  updateHistory();
+  updateSensor(channelA);
+  updateSensor(channelB);
 
-  if (millis() - lastDraw >= GRAPH_INTERVAL_MS) {
-    lastDraw = millis();
-    drawGraphColumn();
+  if (millis() - lastGraphDraw >= GRAPH_INTERVAL_MS) {
+    lastGraphDraw = millis();
+    drawWaveforms();
   }
 
   if (millis() - lastTextDraw >= TEXT_INTERVAL_MS) {
     lastTextDraw = millis();
-    drawGraphStats();
     drawMetrics();
   }
 
   if (millis() - lastSerial >= 500) {
     lastSerial = millis();
-    Serial.printf("GPIO35 raw=%4d range=%4d q=%3d  GPIO27 raw=%4d range=%4d q=%3d  corr=%d%%\n",
-                  channelA.raw, channelA.range, channelA.quality,
-                  channelB.raw, channelB.range, channelB.quality,
-                  correlationPercent());
+    Serial.printf("A bpm=%3d ibi=%4d q=%3d beats=%3d amp=%3d  B bpm=%3d ibi=%4d q=%3d beats=%3d amp=%3d  winner=%s\n",
+                  channelA.bpm, channelA.ibi, channelA.quality, channelA.beatCount, channelA.amplitude,
+                  channelB.bpm, channelB.ibi, channelB.quality, channelB.beatCount, channelB.amplitude,
+                  winnerLabel());
   }
 }
 
-void setupAdc() {
-  analogReadResolution(12);
+void setupPulseSensor() {
+  // PulseSensorPlayground's detector and ESP32 examples expect 10-bit samples.
+  analogReadResolution(10);
   analogSetAttenuation(ADC_11db);
   pinMode(PULSE_A_PIN, INPUT);
   pinMode(PULSE_B_PIN, INPUT);
 
-  for (int i = 0; i < HISTORY_SIZE; i++) {
-    historyA[i] = 0;
-    historyB[i] = 0;
+  pulseSensor.analogInput(PULSE_A_PIN, channelA.index);
+  pulseSensor.analogInput(PULSE_B_PIN, channelB.index);
+  pulseSensor.setThreshold(PULSE_THRESHOLD, channelA.index);
+  pulseSensor.setThreshold(PULSE_THRESHOLD, channelB.index);
+
+  pulseSensorReady = pulseSensor.begin();
+  if (!pulseSensorReady) {
+    Serial.println("PulseSensorPlayground initialization failed");
   }
 }
 
-int readAverage(uint8_t pin) {
-  long total = 0;
-  for (int i = 0; i < 8; i++) {
-    total += analogRead(pin);
-    delayMicroseconds(120);
+void updateSensor(SensorChannel& channel) {
+  channel.beatNow = false;
+  channel.sample = pulseSensor.getLatestSample(channel.index);
+  channel.amplitude = pulseSensor.getPulseAmplitude(channel.index);
+  channel.insideBeat = pulseSensor.isInsideBeat(channel.index);
+  updateLiveRange(channel);
+
+  if (pulseSensor.sawStartOfBeat(channel.index)) {
+    int bpm = pulseSensor.getBeatsPerMinute(channel.index);
+    int ibi = pulseSensor.getInterBeatIntervalMs(channel.index);
+    bool qualified = isQualifiedBeat(channel, bpm, ibi);
+
+    channel.beatNow = true;
+    channel.lastBeatMs = millis();
+    channel.beatFlashUntilMs = millis() + 180;
+    channel.beatCount++;
+
+    if (qualified) {
+      channel.bpm = bpm;
+      channel.ibi = ibi;
+      channel.lastQualifiedBeatMs = millis();
+      if (channel.qualifiedBeatStreak < LOCK_QUALIFIED_BEATS) channel.qualifiedBeatStreak++;
+      channel.locked = channel.qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
+    } else {
+      channel.qualifiedBeatStreak = 0;
+      channel.locked = false;
+    }
+
+    updatePickupScore(channel, qualified, bpm, ibi);
   }
-  return total / 8;
+
+  decayPickupScore(channel);
 }
 
-void updateChannel(Channel& channel) {
-  channel.raw = readAverage(channel.pin);
+void updateLiveRange(SensorChannel& channel) {
+  if (millis() - channel.lastRangeDecayMs >= 100) {
+    channel.lastRangeDecayMs = millis();
+    channel.minValue = min(channel.minValue + 4, channel.sample);
+    channel.maxValue = max(channel.maxValue - 4, channel.sample);
+  }
 
-  if (channel.raw < channel.minValue) channel.minValue = channel.raw;
-  if (channel.raw > channel.maxValue) channel.maxValue = channel.raw;
+  if (channel.sample < channel.minValue) channel.minValue = channel.sample;
+  if (channel.sample > channel.maxValue) channel.maxValue = channel.sample;
+
+  if (channel.maxValue - channel.minValue < 70) {
+    channel.minValue = constrain(channel.sample - 35, 0, SAMPLE_MAX_VALUE);
+    channel.maxValue = constrain(channel.sample + 35, 0, SAMPLE_MAX_VALUE);
+  }
 
   channel.range = channel.maxValue - channel.minValue;
-  channel.quality = scoreChannel(channel);
-
-  // Relax the rolling min/max so old movement fades after a few seconds.
-  if (channel.minValue < channel.raw) channel.minValue += 2;
-  if (channel.maxValue > channel.raw) channel.maxValue -= 2;
 }
 
-void updateHistory() {
-  historyA[historyIndex] = channelA.raw;
-  historyB[historyIndex] = channelB.raw;
-  historyIndex++;
-  if (historyIndex >= HISTORY_SIZE) {
-    historyIndex = 0;
-    historyFilled = true;
+bool isQualifiedBeat(const SensorChannel& channel, int bpm, int ibi) {
+  if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
+  if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
+  if (channel.amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
+  if (channel.range < MIN_LIVE_RANGE) return false;
+  return true;
+}
+
+void updatePickupScore(SensorChannel& channel, bool qualified, int bpm, int ibi) {
+  if (!qualified) {
+    channel.quality = max(channel.quality - 20, 0);
+    return;
+  }
+
+  int score = 35 + channel.qualifiedBeatStreak * 10;
+  int amplitudeScore = map(constrain(channel.amplitude, 0, 90), 0, 90, 0, 15);
+  int rangeScore = map(constrain(channel.range, 0, 220), 0, 220, 0, 15);
+  int stabilityScore = 0;
+
+  if (channel.previousIbi > 0) {
+    int ibiDelta = abs(ibi - channel.previousIbi);
+    stabilityScore = map(constrain(ibiDelta, 0, 240), 240, 0, 0, 25);
+  }
+
+  channel.quality = constrain(score + amplitudeScore + rangeScore + stabilityScore, 0, 100);
+  channel.previousIbi = ibi;
+}
+
+void decayPickupScore(SensorChannel& channel) {
+  unsigned long now = millis();
+
+  if (channel.lastQualifiedBeatMs > 0 && now - channel.lastQualifiedBeatMs > NO_BEAT_TIMEOUT) {
+    channel.bpm = 0;
+    channel.ibi = 0;
+    channel.locked = false;
+    channel.qualifiedBeatStreak = 0;
+    channel.quality = max(channel.quality - 4, 0);
+  }
+
+  if (channel.lastBeatMs == 0 && channel.quality > 0) {
+    channel.quality--;
   }
 }
 
-int scoreChannel(const Channel& channel) {
-  int score = constrain(channel.range, 0, 600);
-  if (isRailed(channel.raw)) score -= 250;
-  if (channel.range < 20) score -= 80;
-  return constrain(score, 0, 600);
-}
-
-int signalToY(const Channel& channel, int graphY) {
-  int lo = channel.minValue - 20;
-  int hi = channel.maxValue + 20;
-  if (hi - lo < 120) {
-    int center = (hi + lo) / 2;
-    lo = center - 60;
-    hi = center + 60;
-  }
-  lo = constrain(lo, 0, ADC_MAX_VALUE);
-  hi = constrain(hi, 0, ADC_MAX_VALUE);
+int sampleToY(const SensorChannel& channel, int waveY) {
+  int lo = channel.minValue - 10;
+  int hi = channel.maxValue + 10;
   if (hi <= lo) hi = lo + 1;
 
-  int y = map(channel.raw, lo, hi, graphY + GRAPH_H - 3, graphY + 3);
-  return constrain(y, graphY + 2, graphY + GRAPH_H - 2);
+  int y = map(channel.sample, lo, hi, waveY + WAVE_H - 4, waveY + 4);
+  return constrain(y, waveY + 3, waveY + WAVE_H - 3);
 }
 
 void drawStaticScreen() {
@@ -212,186 +303,207 @@ void drawStaticScreen() {
 
   tft.setTextSize(1);
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(10, 8);
-  tft.print("Two PulseSensor Comparator");
+  tft.setCursor(10, 7);
+  tft.print(APP_TITLE);
 
   tft.setTextColor(COLOR_DIM, COLOR_BG);
-  tft.setCursor(10, 23);
-  tft.print("raw ADC, rolling range, and signal relationship");
+  tft.setCursor(10, 22);
+  tft.print("Playground BPM / IBI / beat A-B");
 
-  tft.setTextColor(COLOR_A, COLOR_BG);
-  tft.setCursor(238, 8);
-  tft.print("A GPIO35");
-  tft.setTextColor(COLOR_B, COLOR_BG);
-  tft.setCursor(238, 23);
-  tft.print("B GPIO27");
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(234, 7);
+  tft.print(APP_DATE);
+  tft.setTextColor(COLOR_DIM, COLOR_BG);
+  tft.setCursor(286, 22);
+  tft.print(APP_VERSION);
 
-  tft.drawFastHLine(0, HEADER_H, SCREEN_WIDTH, COLOR_GRID);
-  drawGraphFrame(GRAPH_A_Y, "A GPIO35", "cleaner input candidate", COLOR_A);
-  drawGraphFrame(GRAPH_B_Y, "B GPIO27", "second input candidate", COLOR_B);
-  tft.drawFastHLine(0, METRIC_Y - 7, SCREEN_WIDTH, COLOR_GRID);
-  drawMetricFrames();
+  tft.drawFastHLine(0, HEADER_H - 1, SCREEN_WIDTH, COLOR_GRID);
+  drawWaveFrame(WAVE_A_Y, channelA);
+  drawWaveFrame(WAVE_B_Y, channelB);
+  drawPanelFrames();
 }
 
-void drawGraphFrame(int y, const char* title, const char* note, uint16_t color) {
-  tft.drawRect(GRAPH_X, y, GRAPH_W, GRAPH_H, COLOR_GRID);
-  for (int x = GRAPH_X + 2; x < GRAPH_X + GRAPH_W - 2; x += 6) {
-    tft.drawFastHLine(x, y + GRAPH_H / 2, 3, COLOR_GRID);
+void drawWaveFrame(int y, const SensorChannel& channel) {
+  tft.fillRect(WAVE_X - 1, y - 1, WAVE_W + 2, WAVE_H + 2, COLOR_BG);
+  tft.drawRect(WAVE_X, y, WAVE_W, WAVE_H, COLOR_GRID);
+  for (int x = 0; x <= WAVE_W; x += 38) {
+    tft.drawFastVLine(WAVE_X + x, y, WAVE_H, COLOR_GRID_SOFT);
   }
+  for (int x = WAVE_X + 2; x < WAVE_X + WAVE_W - 2; x += 6) {
+    tft.drawPixel(x, y + WAVE_H / 2, COLOR_GRID_SOFT);
+  }
+
   tft.setTextSize(1);
-  tft.setTextColor(color, COLOR_BG);
-  tft.setCursor(GRAPH_X + 4, y - 11);
-  tft.print(title);
+  tft.setTextColor(channel.color, COLOR_BG);
+  tft.setCursor(WAVE_X + 5, y - 10);
+  tft.print(channel.label);
+  tft.print(" ");
+  tft.print(channel.pinLabel);
   tft.setTextColor(COLOR_DIM, COLOR_BG);
-  tft.setCursor(GRAPH_X + 60, y - 11);
-  tft.print(note);
+  tft.setCursor(WAVE_X + 78, y - 10);
+  tft.print("raw truth strip");
 }
 
-void drawGraphColumn() {
-  int x = GRAPH_X + 1 + graphX;
-  int prevX = GRAPH_X + 1 + ((graphX + GRAPH_W - 3) % (GRAPH_W - 2));
-  int yA = signalToY(channelA, GRAPH_A_Y);
-  int yB = signalToY(channelB, GRAPH_B_Y);
+void drawWaveColumnBackground(int localX, int y) {
+  int x = WAVE_X + localX;
+  tft.drawFastVLine(x, y + 1, WAVE_H - 2, COLOR_BG);
 
-  tft.drawFastVLine(x, GRAPH_A_Y + 1, GRAPH_H - 2, COLOR_BG);
-  tft.drawFastVLine(x, GRAPH_B_Y + 1, GRAPH_H - 2, COLOR_BG);
-  if (graphX % 24 == 0) {
-    tft.drawFastVLine(x, GRAPH_A_Y + 1, GRAPH_H - 2, COLOR_GRID);
-    tft.drawFastVLine(x, GRAPH_B_Y + 1, GRAPH_H - 2, COLOR_GRID);
+  if (localX % 38 == 0) {
+    tft.drawFastVLine(x, y + 1, WAVE_H - 2, COLOR_GRID_SOFT);
   }
-  tft.drawPixel(x, GRAPH_A_Y + GRAPH_H / 2, COLOR_GRID);
-  tft.drawPixel(x, GRAPH_B_Y + GRAPH_H / 2, COLOR_GRID);
+
+  tft.drawPixel(x, y + WAVE_H / 2, COLOR_GRID_SOFT);
+}
+
+void drawWaveforms() {
+  int x = WAVE_X + graphX;
+  int prevX = WAVE_X + graphX - 1;
+  int yA = sampleToY(channelA, WAVE_A_Y);
+  int yB = sampleToY(channelB, WAVE_B_Y);
+
+  drawWaveColumnBackground(graphX, WAVE_A_Y);
+  drawWaveColumnBackground(graphX, WAVE_B_Y);
+  drawWaveColumnBackground((graphX + 1) % WAVE_W, WAVE_A_Y);
+  drawWaveColumnBackground((graphX + 1) % WAVE_W, WAVE_B_Y);
 
   if (graphX > 0) {
     tft.drawLine(prevX, channelA.lastY, x, yA, channelA.color);
     tft.drawLine(prevX, channelB.lastY, x, yB, channelB.color);
   }
 
+  if (channelA.beatFlashUntilMs > millis()) {
+    tft.fillCircle(x, yA, 3, COLOR_OVERLAP);
+  }
+  if (channelB.beatFlashUntilMs > millis()) {
+    tft.fillCircle(x, yB, 3, COLOR_OVERLAP);
+  }
+
   channelA.lastY = yA;
   channelB.lastY = yB;
+
   graphX++;
-  if (graphX >= GRAPH_W - 2) {
+  if (graphX >= WAVE_W) {
     graphX = 0;
-    tft.fillRect(GRAPH_X + 1, GRAPH_A_Y + 1, GRAPH_W - 2, GRAPH_H - 2, COLOR_BG);
-    tft.fillRect(GRAPH_X + 1, GRAPH_B_Y + 1, GRAPH_W - 2, GRAPH_H - 2, COLOR_BG);
+    channelA.lastY = yA;
+    channelB.lastY = yB;
+    drawWaveFrame(WAVE_A_Y, channelA);
+    drawWaveFrame(WAVE_B_Y, channelB);
   }
 }
 
-void drawGraphStats() {
-  drawGraphStatsForChannel(GRAPH_A_Y, channelA);
-  drawGraphStatsForChannel(GRAPH_B_Y, channelB);
-}
-
-void drawGraphStatsForChannel(int y, const Channel& channel) {
-  tft.fillRect(255, y + 5, 54, 24, COLOR_BG);
-  tft.setTextSize(1);
-  tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(258, y + 8);
-  tft.printf("raw%5d", channel.raw);
-  tft.setTextColor(COLOR_DIM, COLOR_BG);
-  tft.setCursor(258, y + 20);
-  tft.printf("rng%5d", channel.range);
-}
-
-void drawMetricFrames() {
-  tft.drawRect(8, METRIC_Y, 88, 42, COLOR_A);
-  tft.drawRect(104, METRIC_Y, 88, 42, COLOR_B);
-  tft.drawRect(200, METRIC_Y, 112, 42, COLOR_DIM);
-
-  tft.setTextSize(1);
-  tft.setTextColor(COLOR_A, COLOR_BG);
-  tft.setCursor(14, METRIC_Y + 6);
-  tft.print("A SCORE");
-  tft.setTextColor(COLOR_B, COLOR_BG);
-  tft.setCursor(110, METRIC_Y + 6);
-  tft.print("B SCORE");
-  tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(206, METRIC_Y + 6);
-  tft.print("RELATION");
+void drawPanelFrames() {
+  tft.fillRoundRect(8, PANEL_Y, PANEL_W, PANEL_H, 6, COLOR_PANEL);
+  tft.drawRoundRect(8, PANEL_Y, PANEL_W, PANEL_H, 6, COLOR_A);
+  tft.fillRoundRect(111, PANEL_Y, PANEL_W, PANEL_H, 6, COLOR_PANEL);
+  tft.drawRoundRect(111, PANEL_Y, PANEL_W, PANEL_H, 6, COLOR_B);
+  tft.fillRoundRect(214, PANEL_Y, PANEL_W, PANEL_H, 6, COLOR_PANEL);
+  tft.drawRoundRect(214, PANEL_Y, PANEL_W, PANEL_H, 6, COLOR_GRID);
 }
 
 void drawMetrics() {
-  static bool previousABest = false;
-  static bool previousBBest = false;
-  bool aBest = channelA.quality >= channelB.quality;
-  bool bBest = !aBest;
-  int corr = correlationPercent();
-
-  drawChannelMetric(8, channelA, aBest, previousABest);
-  drawChannelMetric(104, channelB, bBest, previousBBest);
-  drawRelationMetric(corr);
-
-  previousABest = aBest;
-  previousBBest = bBest;
+  drawSensorPanel(8, channelA);
+  drawSensorPanel(111, channelB);
+  drawVerdictPanel();
 }
 
-void drawChannelMetric(int x, const Channel& channel, bool best, bool previousBest) {
-  tft.fillRect(x + 5, METRIC_Y + 18, 48, 18, COLOR_BG);
-  tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setTextSize(2);
-  tft.setCursor(x + 6, METRIC_Y + 20);
-  tft.printf("%3d", channel.quality);
-
-  if (best != previousBest) {
-    tft.fillRect(x + 56, METRIC_Y + 27, 28, 10, COLOR_BG);
-    tft.setTextColor(best ? COLOR_GREEN : COLOR_DIM, COLOR_BG);
-    tft.setTextSize(1);
-    tft.setCursor(x + 58, METRIC_Y + 29);
-    tft.print(best ? "BEST" : "    ");
-  }
-}
-
-void drawRelationMetric(int corr) {
-  tft.fillRect(205, METRIC_Y + 18, 60, 18, COLOR_BG);
-  tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setTextSize(2);
-  tft.setCursor(206, METRIC_Y + 20);
-  tft.printf("%+d%%", corr);
-
-  tft.fillRect(268, METRIC_Y + 27, 38, 10, COLOR_BG);
+void drawSensorPanel(int x, SensorChannel& channel) {
   tft.setTextSize(1);
-  tft.setTextColor(COLOR_DIM, COLOR_BG);
-  tft.setCursor(270, METRIC_Y + 29);
-  tft.print(relationLabel(corr));
-}
+  tft.setTextColor(channel.color, COLOR_PANEL);
+  tft.setCursor(x + 9, PANEL_Y + 8);
+  tft.print(channel.label);
+  tft.print(" ");
+  tft.print(channel.pinLabel);
 
-int correlationPercent() {
-  int count = historyFilled ? HISTORY_SIZE : historyIndex;
-  if (count < 12) return 0;
-
-  long sumA = 0;
-  long sumB = 0;
-  for (int i = 0; i < count; i++) {
-    sumA += historyA[i];
-    sumB += historyB[i];
-  }
-  int meanA = sumA / count;
-  int meanB = sumB / count;
-
-  long numerator = 0;
-  long energyA = 0;
-  long energyB = 0;
-  for (int i = 0; i < count; i++) {
-    long a = historyA[i] - meanA;
-    long b = historyB[i] - meanB;
-    numerator += a * b;
-    energyA += a * a;
-    energyB += b * b;
+  tft.fillRect(x + 9, PANEL_Y + 20, 54, 26, COLOR_PANEL);
+  tft.setTextSize(3);
+  tft.setTextColor(channel.bpm > 0 ? COLOR_TEXT : COLOR_DIM, COLOR_PANEL);
+  tft.setCursor(x + 9, PANEL_Y + 22);
+  if (channel.bpm > 0) {
+    tft.printf("%3d", channel.bpm);
+  } else {
+    tft.print("--");
   }
 
-  if (energyA < 100 || energyB < 100) return 0;
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_DIM, COLOR_PANEL);
+  tft.setCursor(x + 66, PANEL_Y + 24);
+  tft.print("BPM");
+  tft.setCursor(x + 66, PANEL_Y + 36);
+  if (channel.ibi > 0) {
+    tft.printf("%4d", channel.ibi);
+  } else {
+    tft.print(" -- ");
+  }
 
-  float corr = (float)numerator / sqrt((float)energyA * (float)energyB);
-  return constrain((int)(corr * 100.0f), -100, 100);
+  drawBeatGlyph(x + 83, PANEL_Y + 12, channel);
+  drawQualityBar(x + 9, PANEL_Y + 54, 78, channel.quality);
 }
 
-const char* relationLabel(int corr) {
-  int absCorr = abs(corr);
-  if (absCorr >= 75) return corr > 0 ? "same" : "inverse";
-  if (absCorr >= 40) return "related";
-  return "separate";
+void drawVerdictPanel() {
+  const char* winner = winnerLabel();
+  int delta = bpmDelta();
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_DIM, COLOR_PANEL);
+  tft.setCursor(223, PANEL_Y + 8);
+  tft.print("BETTER PICKUP");
+
+  tft.fillRect(223, PANEL_Y + 21, 78, 23, COLOR_PANEL);
+  tft.setTextSize(2);
+  uint16_t winnerColor = COLOR_OVERLAP;
+  if (winner[0] == 'A') winnerColor = COLOR_A;
+  if (winner[0] == 'B') winnerColor = COLOR_B;
+  tft.setTextColor(winnerColor, COLOR_PANEL);
+  tft.setCursor(223, PANEL_Y + 24);
+  tft.print(winner);
+
+  tft.fillRect(223, PANEL_Y + 48, 80, 13, COLOR_PANEL);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_DIM, COLOR_PANEL);
+  tft.setCursor(223, PANEL_Y + 49);
+  if (delta >= 0) {
+    tft.printf("BPM diff %02d", delta);
+  } else {
+    tft.print("BPM diff --");
+  }
+  tft.setCursor(223, PANEL_Y + 61);
+  tft.printf("beats %02d/%02d", channelA.beatCount % 100, channelB.beatCount % 100);
 }
 
-bool isRailed(int value) {
-  return value < 20 || value > ADC_MAX_VALUE - 20;
+void drawQualityBar(int x, int y, int w, int value) {
+  tft.fillRect(x, y, w, 9, COLOR_BG);
+  int filled = map(constrain(value, 0, 100), 0, 100, 0, w);
+  uint16_t color = COLOR_BAD;
+  if (value >= 70) color = COLOR_GOOD;
+  else if (value >= 40) color = COLOR_WARN;
+
+  tft.fillRect(x, y, filled, 9, color);
+  tft.drawRect(x, y, w, 9, COLOR_GRID);
+}
+
+void drawBeatGlyph(int x, int y, const SensorChannel& channel) {
+  uint16_t color = millis() < channel.beatFlashUntilMs ? COLOR_OVERLAP : COLOR_GRID;
+  if (channel.locked && color == COLOR_GRID) color = COLOR_GOOD;
+  tft.fillCircle(x, y, 5, color);
+}
+
+void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint16_t color, uint16_t bg) {
+  int charW = 6 * textSize;
+  int textW = strlen(text) * charW;
+  int cursorX = x + max(0, (w - textW) / 2);
+  tft.setTextSize(textSize);
+  tft.setTextColor(color, bg);
+  tft.setCursor(cursorX, y);
+  tft.print(text);
+}
+
+const char* winnerLabel() {
+  int diff = channelA.quality - channelB.quality;
+  if (abs(diff) < 8) return "EVEN";
+  return diff > 0 ? "A" : "B";
+}
+
+int bpmDelta() {
+  if (channelA.bpm <= 0 || channelB.bpm <= 0) return -1;
+  return abs(channelA.bpm - channelB.bpm);
 }

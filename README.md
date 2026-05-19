@@ -1,6 +1,6 @@
-# CYD Two PulseSensor Comparator
+# CYD Two PulseSensor Playground A/B
 
-Experimental ESP32-2432S028 CYD firmware for comparing two PulseSensor signal inputs side by side.
+Experimental ESP32-2432S028 CYD firmware for comparing how two PulseSensor inputs perform with PulseSensorPlayground BPM, IBI, and beat-event detection.
 
 This repo was cloned from `yury-g/CYD_App_Launcher` on 2026-05-19 after raw pin-scanner testing showed `GPIO35` and `GPIO27` as the best two PulseSensor signal candidates on the connected CYD hardware.
 
@@ -17,17 +17,21 @@ Use `3.3V`, not `5V`.
 
 ## What The Screen Shows
 
-- Top trace: raw `GPIO35`
-- Bottom trace: raw `GPIO27`
-- Rolling raw value and range for each channel
-- `BEST` badge for the channel with the stronger non-railed signal
-- `REL` percentage showing how much the two signals move together
+- Two compact raw truth strips, one for `GPIO35` and one for `GPIO27`
+- PulseSensorPlayground BPM and IBI for each sensor
+- Light green beat flashes when Playground reports `sawStartOfBeat()`
+- Pickup quality bars based on qualified beat streak, recency, amplitude, raw range, and IBI stability
+- `BETTER PICKUP` verdict for A/B sensor testing
 
-Rendered design reference:
+Current rendered design reference:
+
+![Two PulseSensor Playground A/B screen](docs/screenshots/playground-ab-20260519-133133-EDT.svg)
+
+Earlier raw-comparator references:
 
 ![Two PulseSensor comparator screen](docs/screenshots/comparator-textbook-20260519-130920-EDT.svg)
 
-The first version intentionally reads raw ADC values instead of using PulseSensorPlayground. The goal is to learn which wire/pin/sensor gives the cleaner signal before building two-channel beat detection.
+The raw comparator is still represented on the screen as the two waveform strips. The main focus is now which sensor plays better with the existing PulseSensorPlayground detector.
 
 ## Build And Flash
 

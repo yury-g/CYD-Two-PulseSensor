@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 320 240" role="img" aria-label="CYD two PulseSensor raw dashboard light blue light yellow overlap mockup">
+  <rect width="320" height="240" fill="#000000"/>
+
+  <rect x="0" y="0" width="320" height="42" fill="#000000"/>
+  <line x1="0" y1="41" x2="320" y2="41" stroke="#191c19"/>
+  <text x="10" y="16" fill="#ffffff" font-family="Arial, sans-serif" font-size="8" font-weight="700">Two PulseSensor Raw</text>
+  <text x="10" y="33" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">COMPARE GPIO35 + GPIO27</text>
+  <circle cx="156" cy="19" r="5" fill="#8fdfff"/>
+  <circle cx="164" cy="19" r="5" fill="#fff9a6"/>
+  <path d="M151 20 L169 20 L160 32 Z" fill="#9bff9b"/>
+  <text x="226" y="16" fill="#8fdfff" font-family="Arial, sans-serif" font-size="8" font-weight="700">A GPIO35</text>
+  <text x="226" y="33" fill="#fff9a6" font-family="Arial, sans-serif" font-size="8" font-weight="700">B GPIO27</text>
+
+  <rect x="6" y="46" width="308" height="116" rx="6" fill="#040800" stroke="#191c19"/>
+  <rect x="8" y="48" width="304" height="112" fill="#000000"/>
+  <g stroke="#101410">
+    <path d="M8 48V160 M46 48V160 M84 48V160 M122 48V160 M160 48V160 M198 48V160 M236 48V160 M274 48V160 M312 48V160"/>
+    <path d="M8 48H312 M8 76H312 M8 104H312 M8 132H312 M8 160H312"/>
+  </g>
+  <text x="14" y="61" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">RAW LINE</text>
+  <text x="231" y="61" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">shared scale</text>
+  <polyline points="8,125 18,121 28,116 38,102 48,75 58,58 68,75 78,113 88,129 98,125 108,119 118,103 128,78 138,60 148,76 158,114 168,130 178,126 188,119 198,104 208,80 218,62 228,77 238,115 248,130 258,126 268,120 278,104 288,77 298,60 312,79" fill="none" stroke="#8fdfff" stroke-width="2"/>
+  <polyline points="8,133 18,129 28,124 38,112 48,88 58,72 68,87 78,120 88,136 98,132 108,127 118,114 128,91 138,75 148,89 158,121 168,137 178,133 188,127 198,115 208,94 218,78 228,91 238,123 248,138 258,134 268,128 278,114 288,89 298,72 312,91" fill="none" stroke="#fff9a6" stroke-width="2"/>
+  <polyline points="49,82 58,65 67,81 M137,68 148,82 M217,70 228,84 M288,83 298,66" fill="none" stroke="#9bff9b" stroke-width="3" stroke-linecap="round"/>
+
+  <rect x="8" y="170" width="102" height="62" rx="6" fill="#080808" stroke="#8fdfff"/>
+  <text x="18" y="188" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">A SCORE</text>
+  <text x="18" y="216" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700">286</text>
+  <text x="76" y="187" fill="#9bff9b" font-family="Arial, sans-serif" font-size="7" font-weight="700">BEST</text>
+  <text x="18" y="227" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">raw 2138 rng 286</text>
+
+  <rect x="118" y="170" width="102" height="62" rx="6" fill="#080808" stroke="#fff9a6"/>
+  <text x="128" y="188" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">B SCORE</text>
+  <text x="128" y="216" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700">218</text>
+  <text x="128" y="227" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">raw 2094 rng 218</text>
+
+  <rect x="228" y="170" width="84" height="62" rx="6" fill="#080808" stroke="#8c8e8c"/>
+  <text x="237" y="188" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="8">REL %</text>
+  <text x="237" y="216" fill="#ffffff" font-family="Arial, sans-serif" font-size="26" font-weight="700">+72</text>
+  <text x="237" y="227" fill="#9bff9b" font-family="Arial, sans-serif" font-size="7">green overlap</text>
+</svg>

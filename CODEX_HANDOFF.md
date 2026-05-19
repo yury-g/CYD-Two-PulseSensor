@@ -1,6 +1,6 @@
-# Codex Handoff: CYD Two PulseSensor Comparator
+# Codex Handoff: CYD Two PulseSensor Playground A/B
 
-Last updated: 2026-05-19 13:09:20 EDT
+Last updated: 2026-05-19 13:31:33 EDT
 
 This repository is an experimental clone of `yury-g/CYD_App_Launcher` for testing two PulseSensor inputs on one ESP32-2432S028 CYD.
 
@@ -24,24 +24,25 @@ yury-g/CYD_Analog_Pin_Scanner
 
 ## Current Goal
 
-Compare two raw PulseSensor signal candidates before building full two-channel beat detection.
+Compare two PulseSensor hardware candidates using PulseSensorPlayground's BPM, IBI, and `sawStartOfBeat()` behavior.
 
-The firmware intentionally reads raw ADC values instead of using PulseSensorPlayground. It shows:
+The firmware now uses one `PulseSensorPlayground(2)` detector with indexed channels. It shows:
 
-- top trace: `GPIO35`
-- bottom trace: `GPIO27`
-- raw value and rolling range for each
-- `BEST` badge for stronger non-railed signal
-- `REL` percentage showing whether the two signals move together
+- compact raw truth strip for `GPIO35`
+- compact raw truth strip for `GPIO27`
+- Playground BPM and IBI for each sensor
+- light green beat flashes when Playground reports `sawStartOfBeat()`
+- pickup quality bars for each sensor
+- `BETTER PICKUP` verdict for A/B testing
 
 ## Current Visual Direction
 
-2026-05-19 13:09:20 EDT: after the first two-sensor MVP worked well on hardware, the UI was revised with a rendered SVG design reference before flashing. The visual direction is science textbook communication: two clearly labeled traces, live raw/range overlays, bottom score boxes, and a relationship/correlation box.
+2026-05-19 13:36:21 EDT: the one-screen layout was refocused from raw signal comparison to sensor A/B performance with PulseSensorPlayground. The top keeps the useful raw visual comparator as two small waveform strips; the bottom answers which sensor produces more believable BPM, IBI, and beat events. This pass has built and flashed; hardware screen feedback is pending.
 
 Rendered reference:
 
 ```text
-docs/screenshots/comparator-textbook-20260519-130920-EDT.svg
+docs/screenshots/playground-ab-20260519-133133-EDT.svg
 ```
 
 Decision log:
