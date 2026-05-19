@@ -1,6 +1,7 @@
 # CYD App Launcher — Student Version — Changelog
 
 ## Unreleased
+- 2026-05-19 14:54 EDT IR/Green Demo 2 private lab: added a visual UI map, branch-specific spec, IR/green browser dashboard language, a private G/IR ratio trend with reference markers, REST/HOLD/MOVE/NOTE session markers, and Demo 2 CYD labels for the private IR-on-GPIO35 / green-on-GPIO27 experiment. This remains exploratory and makes no SpO2 claim.
 - 2026-05-19 13:37 EDT Web Serial A/B lab: added compact serial telemetry from firmware plus `webserial.html`, a Chrome dashboard with a large raw overlap comparator, BPM trends, beat-event markers, an IBI microscope for magnified millisecond differences, quality bars, and demo mode.
 - 2026-05-19 14:04 EDT timing infographic pass: changed the browser timing chart into an A/B beat ladder where green rungs and a green path show IBI agreement history, while orange rungs show timing disagreement.
 - 2026-05-19 14:07 EDT trust-history pass: restored BPM/beat agreement mapping, added red solo-beat false-positive suspects, made the verdict consider agree/drift/solo history, and added Web Serial auto-reconnect after first permission.

@@ -1,5 +1,49 @@
 # Decision Log
 
+## 2026-05-19 14:54:56 EDT — IR + Green PPG Private Lab Demo 2
+
+Status: visual-first build in progress on local branch `codex/ir-green-led-testing`; intended to remain private unless explicitly pushed.
+
+Decision: turn the inherited A/B browser dashboard into a private IR/green PPG lab before making any oxygen-related claims. The branch keeps the known-good two-channel hardware mapping but changes the research question from "which PulseSensor is cleaner?" to "how do IR and green PPG relationships behave over time?"
+
+Why: IR + green is not a standard red + IR pulse-ox pair. The useful scientific path is to show raw relationships, timing agreement, motion/placement artifacts, and a private `G/IR` amplitude trend that can be compared against human-entered reference readings from a real pulse oximeter.
+
+Visual target:
+
+```text
+docs/screenshots/ir-green-demo2-ui-map-20260519-145456-EDT.svg
+```
+
+Spec:
+
+```text
+docs/ir-green-demo2-spec.md
+```
+
+Rules:
+
+- Keep `GPIO35` as IR and `GPIO27` as green.
+- Keep `GPIO22` avoided.
+- Do not call the ratio SpO2.
+- Make the browser feel like a private lab notebook, not a medical dashboard.
+- Keep reference values as explicit human-entered markers.
+- Keep Web Serial auto-connect off by default.
+
+Browser behavior:
+
+- IR/green raw waveform relationship view.
+- Shared-pulse, drift, and solo-suspect beat history.
+- `G/IR` ratio trend.
+- Reference marker entry.
+- `REST`, `HOLD`, `MOVE`, and `NOTE` session markers.
+
+Firmware behavior:
+
+- CYD title remains `IR+Green PPG`.
+- Version label becomes `Demo2`.
+- Header includes `no SpO2`.
+- Verdict remains `CLEANER PPG`.
+
 ## 2026-05-19 13:37:38 EDT — Chrome Web Serial A/B Lab
 
 Status: built, browser demo verified, and flashed 2026-05-19 13:47:28 EDT; awaiting live browser+CYD hardware feedback.

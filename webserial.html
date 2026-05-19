@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Two PulseSensor A/B Lab</title>
+<title>IR + Green PPG Private Lab</title>
 <style>
   :root {
     --bg: #050706;
@@ -14,6 +14,8 @@
     --text: #f6fbf8;
     --blue: #8fdfff;
     --yellow: #fff4a8;
+    --ir: #8fdfff;
+    --ppg-green: #44f06c;
     --green: #9bff9b;
     --red: #ff5d73;
     --orange: #ffbc66;
@@ -217,6 +219,7 @@
   }
 
   .sensor.b { border-top-color: var(--yellow); }
+  .sensor.green { border-top-color: var(--ppg-green); }
 
   .sensor-head {
     display: flex;
@@ -372,6 +375,77 @@
     line-height: 1.35;
   }
 
+  .ratio-panel {
+    padding: 14px;
+  }
+
+  .ratio-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .ratio-value {
+    min-width: 116px;
+    min-height: 86px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: #07100c;
+    color: var(--ppg-green);
+    font-size: 2.2rem;
+    line-height: 1;
+    font-weight: 900;
+  }
+
+  .ratio-tools {
+    display: grid;
+    gap: 8px;
+  }
+
+  .ref-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  input {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #070908;
+    color: var(--text);
+    min-height: 36px;
+    padding: 0 10px;
+    font: inherit;
+  }
+
+  .event-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .event-button {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #070908;
+    color: var(--text);
+    min-height: 34px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .ratio-canvas-wrap {
+    height: 132px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    background: #020303;
+  }
+
   .winner {
     min-width: 92px;
     min-height: 92px;
@@ -450,6 +524,10 @@
     .canvas-wrap {
       min-height: 260px;
     }
+
+    .event-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 </style>
 </head>
@@ -457,8 +535,8 @@
 <div class="app">
   <header>
     <div>
-      <h1>Two PulseSensor A/B Lab</h1>
-      <div class="subtitle">Raw overlap comparator plus PulseSensorPlayground BPM, IBI, and beat pickup.</div>
+      <h1>IR + Green PPG Private Lab</h1>
+      <div class="subtitle">Private correlation playground: IR on GPIO35, green on GPIO27. No SpO2 claim.</div>
     </div>
     <div class="toolbar">
       <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">Disconnected</span></div>
@@ -485,11 +563,11 @@
     <section class="left">
       <section class="panel">
         <div class="panel-title">
-          <span>Raw Overlap Comparator</span>
+          <span>Live PPG Relationship</span>
           <div class="legend">
-            <span class="key"><span class="swatch" style="background:var(--blue)"></span>A GPIO35</span>
-            <span class="key"><span class="swatch" style="background:var(--yellow)"></span>B GPIO27</span>
-            <span class="key"><span class="swatch" style="background:var(--green)"></span>overlap</span>
+            <span class="key"><span class="swatch" style="background:var(--ir)"></span>IR GPIO35</span>
+            <span class="key"><span class="swatch" style="background:var(--ppg-green)"></span>Green GPIO27</span>
+            <span class="key"><span class="swatch" style="background:var(--green)"></span>shared pulse</span>
           </div>
         </div>
         <div class="canvas-wrap">
@@ -499,10 +577,10 @@
 
       <section class="panel">
         <div class="panel-title">
-          <span>Timing Agreement History</span>
+          <span>Pulse Agreement History</span>
           <div class="legend">
-            <span class="key"><span class="swatch" style="background:var(--blue)"></span>A</span>
-            <span class="key"><span class="swatch" style="background:var(--yellow)"></span>B</span>
+            <span class="key"><span class="swatch" style="background:var(--ir)"></span>IR</span>
+            <span class="key"><span class="swatch" style="background:var(--ppg-green)"></span>Green</span>
             <span class="key"><span class="swatch" style="background:var(--green)"></span>agree</span>
             <span class="key"><span class="swatch" style="background:var(--orange)"></span>drift</span>
             <span class="key"><span class="swatch" style="background:var(--red)"></span>solo</span>
@@ -514,8 +592,8 @@
         <div class="trust-row">
           <div class="trust-chip"><span>Agree</span><strong id="agreeCount">0</strong></div>
           <div class="trust-chip"><span>Drift</span><strong id="driftCount">0</strong></div>
-          <div class="trust-chip"><span>A Solo</span><strong id="aSoloCount">0</strong></div>
-          <div class="trust-chip"><span>B Solo</span><strong id="bSoloCount">0</strong></div>
+          <div class="trust-chip"><span>IR Solo</span><strong id="aSoloCount">0</strong></div>
+          <div class="trust-chip"><span>GRN Solo</span><strong id="bSoloCount">0</strong></div>
         </div>
       </section>
     </section>
@@ -523,7 +601,7 @@
     <section class="right">
       <section class="score-grid">
         <div class="panel sensor a">
-          <div class="sensor-head"><span>A GPIO35</span><span id="aLock">search</span></div>
+          <div class="sensor-head"><span>IR GPIO35</span><span id="aLock">search</span></div>
           <div id="aBpm" class="bpm">--</div>
           <div class="details">
             <div class="mini"><span>IBI</span><strong id="aIbi">--</strong></div>
@@ -533,8 +611,8 @@
           <div class="bar"><i id="aQuality"></i></div>
         </div>
 
-        <div class="panel sensor b">
-          <div class="sensor-head"><span>B GPIO27</span><span id="bLock">search</span></div>
+        <div class="panel sensor b green">
+          <div class="sensor-head"><span>GREEN GPIO27</span><span id="bLock">search</span></div>
           <div id="bBpm" class="bpm">--</div>
           <div class="details">
             <div class="mini"><span>IBI</span><strong id="bIbi">--</strong></div>
@@ -548,18 +626,41 @@
       <section class="panel verdict">
         <div id="winner" class="winner">--</div>
         <div class="verdict-copy">
-          <strong id="verdictTitle">Waiting for serial data</strong>
-          <span id="verdictBody">Connect the CYD to compare which sensor gets believable Playground beats sooner and holds them more steadily.</span>
+          <strong id="verdictTitle">Waiting for PPG data</strong>
+          <span id="verdictBody">Compare IR and green pulse pickup. This is private correlation work, not an oxygen reading.</span>
         </div>
+      </section>
+
+      <section class="panel ratio-panel">
+        <div class="ratio-head">
+          <div id="ratioValue" class="ratio-value">--</div>
+          <div class="ratio-tools">
+            <div class="panel-title" style="padding:0;border:0;">Private Correlation Pad</div>
+            <div class="ref-row">
+              <input id="refInput" inputmode="numeric" placeholder="reference %" aria-label="Reference reading" />
+              <button id="refButton" class="button" type="button">Mark Ref</button>
+            </div>
+            <div class="event-grid">
+              <button id="markRest" class="event-button" type="button">REST</button>
+              <button id="markHold" class="event-button" type="button">HOLD</button>
+              <button id="markMove" class="event-button" type="button">MOVE</button>
+              <button id="markNote" class="event-button" type="button">NOTE</button>
+            </div>
+          </div>
+        </div>
+        <div class="ratio-canvas-wrap">
+          <canvas id="ratioCanvas"></canvas>
+        </div>
+        <div id="ratioCopy" class="ibi-copy">G/IR is green amplitude divided by IR amplitude. Treat it as an exploratory trend only.</div>
       </section>
 
       <section class="panel ibi-panel">
         <div class="ibi-readout">
           <div>
-            <div class="panel-title" style="padding:0;border:0;margin-bottom:8px;">IBI Microscope</div>
+            <div class="panel-title" style="padding:0;border:0;margin-bottom:8px;">Beat Timing Microscope</div>
             <div id="ibiDelta" class="ibi-delta">--</div>
           </div>
-          <div id="ibiLabels" class="ibi-labels">A -- ms<br>B -- ms</div>
+          <div id="ibiLabels" class="ibi-labels">IR -- ms<br>GRN -- ms</div>
         </div>
         <div class="ibi-scope" aria-label="Magnified IBI difference scale">
           <span id="ibiDotA" class="ibi-dot a" style="left:50%"></span>
@@ -579,7 +680,9 @@
 <script>
 const COLORS = {
   blue: "#8fdfff",
-  yellow: "#fff4a8",
+  yellow: "#44f06c",
+  ir: "#8fdfff",
+  ppgGreen: "#44f06c",
   green: "#9bff9b",
   grid: "#1b2421",
   text: "#f6fbf8",
@@ -606,6 +709,7 @@ const state = {
   demoWasHighB: false,
   demoBeatUntilA: 0,
   demoBeatUntilB: 0,
+  markers: [],
   port: null,
   reader: null,
   lastBeatA: 0,
@@ -623,6 +727,7 @@ const els = {
   windowSelect: document.getElementById("windowSelect"),
   rawCanvas: document.getElementById("rawCanvas"),
   trendCanvas: document.getElementById("trendCanvas"),
+  ratioCanvas: document.getElementById("ratioCanvas"),
   agreeCount: document.getElementById("agreeCount"),
   driftCount: document.getElementById("driftCount"),
   aSoloCount: document.getElementById("aSoloCount"),
@@ -637,6 +742,14 @@ const els = {
   ibiDotA: document.getElementById("ibiDotA"),
   ibiDotB: document.getElementById("ibiDotB"),
   ibiCopy: document.getElementById("ibiCopy"),
+  ratioValue: document.getElementById("ratioValue"),
+  ratioCopy: document.getElementById("ratioCopy"),
+  refInput: document.getElementById("refInput"),
+  refButton: document.getElementById("refButton"),
+  markRest: document.getElementById("markRest"),
+  markHold: document.getElementById("markHold"),
+  markMove: document.getElementById("markMove"),
+  markNote: document.getElementById("markNote"),
   aBpm: document.getElementById("aBpm"),
   aIbi: document.getElementById("aIbi"),
   aAmp: document.getElementById("aAmp"),
@@ -670,6 +783,14 @@ els.connectButton.addEventListener("click", () => {
 els.demoButton.addEventListener("click", toggleDemo);
 els.clearButton.addEventListener("click", clearData);
 els.windowSelect.addEventListener("change", drawAll);
+els.refButton.addEventListener("click", addReferenceMarker);
+els.refInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") addReferenceMarker();
+});
+els.markRest.addEventListener("click", () => addSessionMarker("REST"));
+els.markHold.addEventListener("click", () => addSessionMarker("HOLD"));
+els.markMove.addEventListener("click", () => addSessionMarker("MOVE"));
+els.markNote.addEventListener("click", () => addSessionMarker("NOTE"));
 window.addEventListener("resize", drawAll);
 
 async function connectSerial() {
@@ -803,11 +924,11 @@ function pushPoint(point) {
   const latest = state.points[state.points.length - 1];
   if (latest.aBeat && latest.aBeats !== state.lastBeatA) {
     state.lastBeatA = latest.aBeats;
-    addLog(`A beat ${latest.aBeats}: ${latest.aBpm || "--"} BPM, ${latest.aIbi || "--"} ms`);
+    addLog(`IR beat ${latest.aBeats}: ${latest.aBpm || "--"} BPM, ${latest.aIbi || "--"} ms`);
   }
   if (latest.bBeat && latest.bBeats !== state.lastBeatB) {
     state.lastBeatB = latest.bBeats;
-    addLog(`B beat ${latest.bBeats}: ${latest.bBpm || "--"} BPM, ${latest.bIbi || "--"} ms`);
+    addLog(`GRN beat ${latest.bBeats}: ${latest.bBpm || "--"} BPM, ${latest.bIbi || "--"} ms`);
   }
 
   updateNumbers(latest);
@@ -830,8 +951,21 @@ function updateNumbers(p) {
   els.bQuality.style.width = `${clamp(p.bQuality, 0, 100)}%`;
 
   els.sampleCount.textContent = `${state.points.length} samples`;
+  updateRatioReadout(p);
   updateTrustSummary();
   updateIbiMicroscope(p);
+}
+
+function updateRatioReadout(p) {
+  const ratio = greenIrRatio(p);
+  if (!Number.isFinite(ratio)) {
+    els.ratioValue.textContent = "--";
+    els.ratioCopy.textContent = "Waiting for both amplitudes. G/IR is an exploratory signal ratio only.";
+    return;
+  }
+  els.ratioValue.textContent = `${Math.round(ratio)}%`;
+  const reading = ratio < 55 ? "green is much smaller than IR" : ratio < 95 ? "green is below IR" : ratio < 125 ? "green is near IR" : "green is above IR";
+  els.ratioCopy.textContent = `G/IR ${Math.round(ratio)}%: ${reading}. Compare trends against human-entered reference markers only.`;
 }
 
 function updateTrustSummary() {
@@ -843,15 +977,15 @@ function updateTrustSummary() {
 
   const winner = winnerFromSummary(summary);
   els.winner.textContent = winner.label;
-  els.winner.style.color = winner.label === "A" ? COLORS.blue : winner.label === "B" ? COLORS.yellow : COLORS.green;
+  els.winner.style.color = winner.label === "IR" ? COLORS.ir : winner.label === "GRN" ? COLORS.ppgGreen : COLORS.green;
   els.verdictTitle.textContent = winner.title;
-  els.verdictBody.textContent = `Green ${summary.greenPct}%, orange ${summary.drift}, red A ${summary.soloA}, red B ${summary.soloB}. ${winner.reason}`;
+  els.verdictBody.textContent = `Shared ${summary.greenPct}%, drift ${summary.drift}, IR solo ${summary.soloA}, GRN solo ${summary.soloB}. ${winner.reason}`;
 }
 
 function updateIbiMicroscope(p) {
   if (p.aIbi <= 0 || p.bIbi <= 0) {
     els.ibiDelta.textContent = "--";
-    els.ibiLabels.innerHTML = "A -- ms<br>B -- ms";
+    els.ibiLabels.innerHTML = "IR -- ms<br>GRN -- ms";
     els.ibiDotA.style.left = "50%";
     els.ibiDotB.style.left = "50%";
     els.ibiCopy.textContent = "Waiting for both IBI readings. Center means the two detectors agree.";
@@ -866,11 +1000,11 @@ function updateIbiMicroscope(p) {
   const bOffset = clamp(((p.bIbi - center) / zoomMs) * 50, -45, 45);
 
   els.ibiDelta.textContent = `Δ ${absDelta} ms`;
-  els.ibiLabels.innerHTML = `A ${p.aIbi} ms<br>B ${p.bIbi} ms`;
+  els.ibiLabels.innerHTML = `IR ${p.aIbi} ms<br>GRN ${p.bIbi} ms`;
   els.ibiDotA.style.left = `${50 + aOffset}%`;
   els.ibiDotB.style.left = `${50 + bOffset}%`;
 
-  const leader = delta < 0 ? "A is shorter" : delta > 0 ? "B is shorter" : "matched";
+  const leader = delta < 0 ? "IR is shorter" : delta > 0 ? "GRN is shorter" : "matched";
   const reading = absDelta <= 20 ? "very close" : absDelta <= 60 ? "noticeably different" : "far apart";
   els.ibiCopy.textContent = `${leader}; the detectors are ${reading}. Scale is magnified around their shared center, ±120 ms.`;
 }
@@ -878,6 +1012,7 @@ function updateIbiMicroscope(p) {
 function drawAll() {
   drawRaw();
   drawTrend();
+  drawRatioTrend();
 }
 
 function visiblePoints() {
@@ -906,15 +1041,15 @@ function drawRaw() {
   const { ctx, w, h } = setupCanvas(els.rawCanvas);
   const points = visiblePoints();
   drawGrid(ctx, w, h, 6, 5);
-  label(ctx, "raw ADC sample, shared 0-1023 scale", 12, 20);
+  label(ctx, "raw ADC, IR and green on shared 0-1023 scale", 12, 20);
 
   if (points.length < 2) {
     empty(ctx, w, h, "Connect the CYD or start Demo");
     return;
   }
 
-  drawLine(ctx, points, w, h, "aSample", COLORS.blue, 2, 0, 1023);
-  drawLine(ctx, points, w, h, "bSample", COLORS.yellow, 2, 0, 1023);
+  drawLine(ctx, points, w, h, "aSample", COLORS.ir, 2, 0, 1023);
+  drawLine(ctx, points, w, h, "bSample", COLORS.ppgGreen, 2, 0, 1023);
   drawOverlap(ctx, points, w, h);
 }
 
@@ -942,9 +1077,49 @@ function drawTrend() {
   drawPlotDivider(ctx, w, lane.top);
 
   drawBpmAgreementBands(ctx, points, w, bpmPlot);
-  drawScaledLine(ctx, points, w, "aBpm", COLORS.blue, 2, bpmPlot);
-  drawScaledLine(ctx, points, w, "bBpm", COLORS.yellow, 2, bpmPlot);
+  drawScaledLine(ctx, points, w, "aBpm", COLORS.ir, 2, bpmPlot);
+  drawScaledLine(ctx, points, w, "bBpm", COLORS.ppgGreen, 2, bpmPlot);
   drawTimingAgreement(ctx, points, w, lane);
+}
+
+function drawRatioTrend() {
+  const { ctx, w, h } = setupCanvas(els.ratioCanvas);
+  const points = visiblePoints();
+  drawGrid(ctx, w, h, 6, 3);
+  label(ctx, "G/IR ratio trend with private reference markers", 12, 20);
+
+  if (points.length < 2) {
+    empty(ctx, w, h, "Start Demo or connect CYD");
+    return;
+  }
+
+  const plot = { top: 28, bottom: h - 24, min: 20, max: 180 };
+  ctx.save();
+  ctx.strokeStyle = COLORS.ppgGreen;
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  let hasPoint = false;
+  points.forEach((p, i) => {
+    const ratio = greenIrRatio(p);
+    if (!Number.isFinite(ratio)) return;
+    const x = xFor(i, points.length, w);
+    const y = yForPlot(ratio, plot);
+    if (!hasPoint) {
+      ctx.moveTo(x, y);
+      hasPoint = true;
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.stroke();
+
+  const minT = points[0].t;
+  const maxT = points[points.length - 1].t;
+  state.markers
+    .filter((marker) => marker.t >= minT && marker.t <= maxT)
+    .forEach((marker) => drawMarker(ctx, marker, minT, maxT, w, h, plot));
+  ctx.restore();
 }
 
 function drawLine(ctx, points, w, h, key, color, width, min, max) {
@@ -1017,16 +1192,16 @@ function drawTimingAgreement(ctx, points, w, lane) {
 
   points.forEach((p, i) => {
     const x = xFor(i, points.length, w);
-    if (isNewBeat(p, points[i - 1], "a")) ibiDot(ctx, x, lane.aY, COLORS.blue);
-    if (isNewBeat(p, points[i - 1], "b")) ibiDot(ctx, x, lane.bY, COLORS.yellow);
+    if (isNewBeat(p, points[i - 1], "a")) ibiDot(ctx, x, lane.aY, COLORS.ir);
+    if (isNewBeat(p, points[i - 1], "b")) ibiDot(ctx, x, lane.bY, COLORS.ppgGreen);
   });
 
-  ctx.fillStyle = COLORS.blue;
-  ctx.fillText("A", 12, lane.aY - 8);
+  ctx.fillStyle = COLORS.ir;
+  ctx.fillText("IR", 12, lane.aY - 8);
   ctx.fillStyle = COLORS.green;
   ctx.fillText("=", 12, lane.centerY + 4);
-  ctx.fillStyle = COLORS.yellow;
-  ctx.fillText("B", 12, lane.bY + 20);
+  ctx.fillStyle = COLORS.ppgGreen;
+  ctx.fillText("GRN", 12, lane.bY + 20);
   ctx.restore();
 }
 
@@ -1197,21 +1372,77 @@ function winnerFromSummary(summary) {
     return {
       label: "--",
       title: "Waiting for beat history",
-      reason: "Green agreement is the target; red solo marks are false-positive suspects."
+      reason: "Shared IR/green pulse timing is the target; red solo marks are suspect beats."
     };
   }
 
   if (Math.abs(aPenalty - bPenalty) < 1) {
     return {
       label: "EVEN",
-      title: "Even trust history",
-      reason: "Both sensors have similar green path, lock, and solo-beat history."
+      title: "Even pickup history",
+      reason: "IR and green have similar shared-pulse, lock, and solo-beat history."
     };
   }
 
   return aPenalty < bPenalty
-    ? { label: "A", title: "Sensor A is cleaner", reason: "A has fewer red solo suspects and steadier lock in this window." }
-    : { label: "B", title: "Sensor B is cleaner", reason: "B has fewer red solo suspects and steadier lock in this window." };
+    ? { label: "IR", title: "IR pickup is cleaner", reason: "IR has fewer solo suspects and steadier lock in this window." }
+    : { label: "GRN", title: "Green pickup is cleaner", reason: "Green has fewer solo suspects and steadier lock in this window." };
+}
+
+function greenIrRatio(p) {
+  if (!p || p.aAmp <= 0 || p.bAmp <= 0) return NaN;
+  return (p.bAmp / p.aAmp) * 100;
+}
+
+function addReferenceMarker() {
+  const value = Number(els.refInput.value);
+  if (!Number.isFinite(value) || value <= 0) {
+    addLog("reference marker needs a number");
+    return;
+  }
+  addMarker({ type: "REF", value });
+  els.refInput.value = "";
+}
+
+function addSessionMarker(type) {
+  addMarker({ type });
+}
+
+function addMarker(marker) {
+  const latest = state.points[state.points.length - 1];
+  const t = latest ? latest.t : 0;
+  const ratio = latest ? greenIrRatio(latest) : NaN;
+  state.markers.push({ ...marker, t, ratio: Number.isFinite(ratio) ? ratio : null });
+  while (state.markers.length > 80) state.markers.shift();
+  addLog(marker.value ? `${marker.type} ${marker.value}% marker` : `${marker.type} marker`);
+  drawAll();
+}
+
+function drawMarker(ctx, marker, minT, maxT, w, h, plot) {
+  const x = maxT === minT ? w : ((marker.t - minT) / (maxT - minT)) * w;
+  const color = marker.type === "REF" ? COLORS.ir : marker.type === "HOLD" ? COLORS.orange : marker.type === "MOVE" ? COLORS.red : COLORS.green;
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2;
+  ctx.setLineDash(marker.type === "REF" ? [] : [4, 5]);
+  ctx.beginPath();
+  ctx.moveTo(x, 24);
+  ctx.lineTo(x, h - 8);
+  ctx.stroke();
+
+  if (marker.type === "REF") {
+    const y = Number.isFinite(marker.ratio) ? yForPlot(marker.ratio, plot) : h / 2;
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = "11px ui-monospace, Menlo, Consolas, monospace";
+    ctx.fillText(`${marker.value}%`, Math.min(w - 38, x + 8), Math.max(22, y - 8));
+  } else {
+    ctx.font = "11px ui-monospace, Menlo, Consolas, monospace";
+    ctx.fillText(marker.type, Math.min(w - 34, x + 6), 38);
+  }
+  ctx.restore();
 }
 
 function ibiDot(ctx, x, y, color) {
@@ -1416,21 +1647,21 @@ function startDemo() {
       aIbi: demoIbiA,
       aQuality: 82 + Math.round(Math.sin(t / 3500) * 8),
       aBeats: beatA,
-      aAmp: 44,
+      aAmp: 48 + Math.round(Math.sin(t / 5200) * 6),
       aRange: 210,
       aLocked: true,
       aBeat: beatActiveA,
-      bSample: Math.round(512 + beatPhaseB * 135 + Math.sin(t / 181) * 22),
+      bSample: Math.round(512 + beatPhaseB * (driftSegment ? 102 : 135) + Math.sin(t / 181) * 22),
       bBpm: demoBpmB,
       bIbi: demoIbiB,
       bQuality: 62 + Math.round(Math.sin(t / 3000) * 10),
       bBeats: beatB,
-      bAmp: 32,
+      bAmp: 34 + Math.round(Math.sin(t / 3700 + 1.2) * 10) + (driftSegment ? -6 : 0),
       bRange: 160,
       bLocked: beatB > 2,
       bBeat: beatActiveB,
       bpmDiff: Math.abs(demoBpmA - demoBpmB),
-      winner: "A"
+      winner: "IR"
     });
   }, 40);
 }
@@ -1445,10 +1676,12 @@ function stopDemo() {
 
 function clearData() {
   state.points = [];
+  state.markers = [];
   state.lastBeatA = 0;
   state.lastBeatB = 0;
   els.log.innerHTML = "";
   els.sampleCount.textContent = "0 samples";
+  els.ratioValue.textContent = "--";
   drawAll();
 }
 

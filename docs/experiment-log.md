@@ -1,5 +1,35 @@
 # CYD Hardware Experiment Log
 
+## 2026-05-19 14:54 EDT — IR + Green PPG Demo 2 Private Lab
+
+Branch: `codex/ir-green-led-testing`
+
+Status: visual map and browser Demo mode built; firmware set to `IR+Green PPG` `Demo2`; ready for connected CYD flash and real-line testing.
+
+### Goal
+
+Explore whether an IR PPG channel on `GPIO35` and a green-light PPG channel on `GPIO27` produce a useful private correlation signal. The branch intentionally avoids SpO2 claims.
+
+### Built
+
+- Visual UI target: `docs/screenshots/ir-green-demo2-ui-map-20260519-145456-EDT.svg`
+- Browser screenshot: `docs/screenshots/ir-green-demo2-browser-20260519-145456-EDT.png`
+- Spec: `docs/ir-green-demo2-spec.md`
+- Browser dashboard relabeled for IR/green private lab work.
+- Added `G/IR` ratio trend and human-entered reference markers.
+- Added session buttons: `REST`, `HOLD`, `MOVE`, `NOTE`.
+- Kept Web Serial auto-connect off by default.
+
+### Current Interpretation
+
+- `a*` telemetry fields are IR.
+- `b*` telemetry fields are green.
+- `G/IR` is green amplitude divided by IR amplitude, not oxygen saturation.
+
+### Next Real-Line Test
+
+Flash Demo 2 to the connected CYD, connect IR to `GPIO35`, connect green to `GPIO27`, and observe whether the ratio trend changes repeatably during rest, breath hold, movement, and placement changes.
+
 ## 2026-05-19 11:39 EDT — Signal Dashboard / Finger Coach Side Quest
 
 Branch: `codex/finger-coach-dashboard-20260519-111641-EDT`

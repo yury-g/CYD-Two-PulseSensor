@@ -1,15 +1,18 @@
 /*
- * CYD Two PulseSensor Playground A/B
+ * CYD IR + Green PPG Playground Test
  *
- * ESP32-2432S028 CYD experiment for comparing how two PulseSensor hardware
- * candidates work with the existing PulseSensorPlayground BPM, IBI, and
- * beat-event detector.
+ * ESP32-2432S028 CYD experiment for comparing an IR PPG channel and a green
+ * light PPG channel with PulseSensorPlayground BPM, IBI, and beat detection.
+ *
+ * Demo 1 intentionally does not calculate medical SpO2. Standard pulse
+ * oximetry needs calibrated red + IR wavelengths; IR + green is useful here
+ * for timing, pickup quality, and exploratory ratio testing only.
  *
  * Current hardware-tested mapping:
- *   PulseSensor A purple signal -> GPIO35
- *   PulseSensor B purple signal -> GPIO27
- *   Sensor power                -> 3.3V
- *   Sensor ground               -> GND
+ *   IR PPG signal       -> GPIO35
+ *   Green PPG signal    -> GPIO27
+ *   Sensor power        -> 3.3V
+ *   Sensor ground       -> GND
  */
 
 #include <TFT_eSPI.h>
@@ -36,8 +39,8 @@
 
 // ===== APP VERSION =====
 
-#define APP_TITLE "Two PulseSensor"
-#define APP_VERSION "v0.3"
+#define APP_TITLE "IR+Green PPG"
+#define APP_VERSION "Demo2"
 #define APP_DATE "2026-05-19"
 
 // ===== SCREEN =====
@@ -70,6 +73,7 @@
 #define COLOR_DIM 0x8C71
 #define COLOR_A 0x8EFF
 #define COLOR_B 0xFFD4
+#define COLOR_GREEN_PPG 0x07E0
 #define COLOR_OVERLAP 0x9FF3
 #define COLOR_GOOD 0x07E0
 #define COLOR_WARN 0xFBE0
@@ -105,8 +109,8 @@ struct SensorChannel {
 TFT_eSPI tft = TFT_eSPI();
 PulseSensorPlayground pulseSensor(2);
 
-SensorChannel channelA = {"A", "GPIO35", PULSE_A_PIN, 0, COLOR_A, 512, 512, 512, 0, 0, 0, 0, 0, 0, 0, 0, WAVE_A_Y + WAVE_H / 2, 0, 0, 0, 0, false, false, false};
-SensorChannel channelB = {"B", "GPIO27", PULSE_B_PIN, 1, COLOR_B, 512, 512, 512, 0, 0, 0, 0, 0, 0, 0, 0, WAVE_B_Y + WAVE_H / 2, 0, 0, 0, 0, false, false, false};
+SensorChannel channelA = {"IR", "GPIO35", PULSE_A_PIN, 0, COLOR_A, 512, 512, 512, 0, 0, 0, 0, 0, 0, 0, 0, WAVE_A_Y + WAVE_H / 2, 0, 0, 0, 0, false, false, false};
+SensorChannel channelB = {"GRN", "GPIO27", PULSE_B_PIN, 1, COLOR_GREEN_PPG, 512, 512, 512, 0, 0, 0, 0, 0, 0, 0, 0, WAVE_B_Y + WAVE_H / 2, 0, 0, 0, 0, false, false, false};
 
 int graphX = 0;
 unsigned long lastGraphDraw = 0;
@@ -137,11 +141,12 @@ void drawCenteredText(const char* text, int x, int y, int w, int textSize, uint1
 void printSerialTelemetry();
 const char* winnerLabel();
 int bpmDelta();
+int greenIrRatioPct();
 
 void setup() {
   Serial.begin(115200);
   delay(100);
-  Serial.println("CYD Two PulseSensor Playground A/B");
+  Serial.println("CYD IR + Green PPG Demo 2");
 
   pinMode(BACKLIGHT_PIN, OUTPUT);
   digitalWrite(BACKLIGHT_PIN, HIGH);
@@ -307,7 +312,7 @@ void drawStaticScreen() {
 
   tft.setTextColor(COLOR_DIM, COLOR_BG);
   tft.setCursor(10, 22);
-  tft.print("Playground BPM / IBI / beat A-B");
+  tft.print("IR GPIO35 / Green GPIO27 / no SpO2");
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
   tft.setCursor(234, 7);
@@ -445,13 +450,13 @@ void drawVerdictPanel() {
   tft.setTextSize(1);
   tft.setTextColor(COLOR_DIM, COLOR_PANEL);
   tft.setCursor(223, PANEL_Y + 8);
-  tft.print("BETTER PICKUP");
+  tft.print("CLEANER PPG");
 
   tft.fillRect(223, PANEL_Y + 21, 78, 23, COLOR_PANEL);
   tft.setTextSize(2);
   uint16_t winnerColor = COLOR_OVERLAP;
-  if (winner[0] == 'A') winnerColor = COLOR_A;
-  if (winner[0] == 'B') winnerColor = COLOR_B;
+  if (winner[0] == 'I') winnerColor = channelA.color;
+  if (winner[0] == 'G') winnerColor = channelB.color;
   tft.setTextColor(winnerColor, COLOR_PANEL);
   tft.setCursor(223, PANEL_Y + 24);
   tft.print(winner);
@@ -466,7 +471,12 @@ void drawVerdictPanel() {
     tft.print("BPM diff --");
   }
   tft.setCursor(223, PANEL_Y + 61);
-  tft.printf("beats %02d/%02d", channelA.beatCount % 100, channelB.beatCount % 100);
+  int ratioPct = greenIrRatioPct();
+  if (ratioPct >= 0) {
+    tft.printf("G/IR %03d%%", ratioPct);
+  } else {
+    tft.print("G/IR ---");
+  }
 }
 
 void drawQualityBar(int x, int y, int w, int value) {
@@ -515,10 +525,15 @@ void printSerialTelemetry() {
 const char* winnerLabel() {
   int diff = channelA.quality - channelB.quality;
   if (abs(diff) < 8) return "EVEN";
-  return diff > 0 ? "A" : "B";
+  return diff > 0 ? "IR" : "GRN";
 }
 
 int bpmDelta() {
   if (channelA.bpm <= 0 || channelB.bpm <= 0) return -1;
   return abs(channelA.bpm - channelB.bpm);
+}
+
+int greenIrRatioPct() {
+  if (channelA.amplitude <= 0 || channelB.amplitude <= 0) return -1;
+  return constrain((channelB.amplitude * 100) / channelA.amplitude, 0, 999);
 }

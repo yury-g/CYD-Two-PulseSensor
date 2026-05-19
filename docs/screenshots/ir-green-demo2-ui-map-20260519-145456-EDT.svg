@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="920" viewBox="0 0 1440 920" role="img" aria-label="IR and Green PPG private lab demo 2 visual map">
+  <rect width="1440" height="920" fill="#050706"/>
+  <defs>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g font-family="Inter, Arial, sans-serif">
+    <text x="34" y="48" fill="#f6fbf8" font-size="30" font-weight="800">IR + Green PPG Private Lab</text>
+    <text x="34" y="78" fill="#96a19d" font-size="16">Demo 2 visual target: relationships first, no oxygen claim</text>
+    <rect x="1134" y="28" width="270" height="58" rx="8" fill="#1a0b0e" stroke="#ff5d73"/>
+    <text x="1154" y="53" fill="#ff5d73" font-size="14" font-weight="800">NOT SpO2</text>
+    <text x="1154" y="74" fill="#f6b0bc" font-size="13">private correlation experiment only</text>
+
+    <g transform="translate(34 112)">
+      <rect width="860" height="392" rx="8" fill="#101413" stroke="#2b3532"/>
+      <text x="20" y="34" fill="#96a19d" font-size="14" font-weight="800">LIVE PPG RELATIONSHIP</text>
+      <g transform="translate(20 56)">
+        <rect width="820" height="296" rx="6" fill="#020303" stroke="#2b3532"/>
+        <g stroke="#1b2421" stroke-width="1">
+          <line x1="120" y1="0" x2="120" y2="296"/>
+          <line x1="240" y1="0" x2="240" y2="296"/>
+          <line x1="360" y1="0" x2="360" y2="296"/>
+          <line x1="480" y1="0" x2="480" y2="296"/>
+          <line x1="600" y1="0" x2="600" y2="296"/>
+          <line x1="720" y1="0" x2="720" y2="296"/>
+          <line x1="0" y1="88" x2="820" y2="88"/>
+          <line x1="0" y1="190" x2="820" y2="190"/>
+        </g>
+
+        <text x="16" y="28" fill="#8fdfff" font-size="14" font-weight="800">IR GPIO35</text>
+        <text x="16" y="152" fill="#44f06c" font-size="14" font-weight="800">GREEN GPIO27</text>
+
+        <path d="M34 70 C70 38 99 114 135 70 S202 42 238 70 S306 112 342 70 S410 38 446 70 S514 116 550 70 S618 42 654 70 S722 110 788 70" fill="none" stroke="#8fdfff" stroke-width="4"/>
+        <path d="M34 196 C70 168 99 222 135 196 S202 174 238 196 S306 226 342 196 S410 164 446 196 S514 230 550 196 S618 170 654 196 S722 224 788 196" fill="none" stroke="#44f06c" stroke-width="4"/>
+
+        <g stroke="#9bff9b" stroke-width="5" stroke-linecap="round" opacity="0.9">
+          <line x1="135" y1="70" x2="135" y2="196"/>
+          <line x1="342" y1="70" x2="342" y2="196"/>
+          <line x1="550" y1="70" x2="550" y2="196"/>
+          <line x1="654" y1="70" x2="654" y2="196"/>
+        </g>
+        <g stroke="#ffbc66" stroke-width="5" stroke-linecap="round">
+          <line x1="238" y1="70" x2="253" y2="196"/>
+        </g>
+        <g stroke="#ff5d73" stroke-width="4" stroke-linecap="round">
+          <line x1="450" y1="180" x2="466" y2="212"/>
+          <line x1="466" y1="180" x2="450" y2="212"/>
+        </g>
+
+        <rect x="36" y="250" width="160" height="18" rx="9" fill="#07110b" stroke="#1b2421"/>
+        <rect x="36" y="250" width="132" height="18" rx="9" fill="#9bff9b"/>
+        <text x="36" y="282" fill="#96a19d" font-size="13">shared pulse confidence</text>
+
+        <rect x="244" y="250" width="160" height="18" rx="9" fill="#171009" stroke="#1b2421"/>
+        <rect x="244" y="250" width="72" height="18" rx="9" fill="#ffbc66"/>
+        <text x="244" y="282" fill="#96a19d" font-size="13">drift / placement watch</text>
+
+        <rect x="452" y="250" width="160" height="18" rx="9" fill="#19080c" stroke="#1b2421"/>
+        <rect x="452" y="250" width="26" height="18" rx="9" fill="#ff5d73"/>
+        <text x="452" y="282" fill="#96a19d" font-size="13">solo beats suspect</text>
+      </g>
+    </g>
+
+    <g transform="translate(918 112)">
+      <rect width="486" height="392" rx="8" fill="#101413" stroke="#2b3532"/>
+      <text x="20" y="34" fill="#96a19d" font-size="14" font-weight="800">PRIVATE CORRELATION PAD</text>
+      <g transform="translate(20 58)">
+        <rect width="210" height="112" rx="8" fill="#07100c" stroke="#44f06c"/>
+        <text x="18" y="32" fill="#44f06c" font-size="15" font-weight="800">G/IR</text>
+        <text x="18" y="84" fill="#f6fbf8" font-size="48" font-weight="900">074%</text>
+        <text x="118" y="84" fill="#96a19d" font-size="14">ratio</text>
+
+        <rect x="246" width="220" height="112" rx="8" fill="#080d11" stroke="#8fdfff"/>
+        <text x="264" y="32" fill="#8fdfff" font-size="15" font-weight="800">REF</text>
+        <text x="264" y="84" fill="#f6fbf8" font-size="48" font-weight="900">98</text>
+        <text x="330" y="84" fill="#96a19d" font-size="14">entered by human</text>
+
+        <rect y="144" width="466" height="116" rx="8" fill="#020303" stroke="#2b3532"/>
+        <text x="18" y="176" fill="#96a19d" font-size="13" font-weight="800">RATIO TREND VS REFERENCE MARKERS</text>
+        <path d="M22 226 C78 196 118 238 174 214 S282 184 334 214 S412 238 444 200" fill="none" stroke="#44f06c" stroke-width="5"/>
+        <circle cx="174" cy="214" r="8" fill="#8fdfff"/>
+        <circle cx="334" cy="214" r="8" fill="#8fdfff"/>
+        <text x="24" y="248" fill="#96a19d" font-size="12">blue dots = reference readings typed in</text>
+
+        <g transform="translate(0 286)">
+          <rect width="108" height="52" rx="8" fill="#070908" stroke="#2b3532"/>
+          <text x="18" y="32" fill="#f6fbf8" font-size="22" font-weight="800">REST</text>
+          <rect x="120" width="108" height="52" rx="8" fill="#070908" stroke="#2b3532"/>
+          <text x="139" y="32" fill="#f6fbf8" font-size="22" font-weight="800">HOLD</text>
+          <rect x="240" width="108" height="52" rx="8" fill="#070908" stroke="#2b3532"/>
+          <text x="260" y="32" fill="#f6fbf8" font-size="22" font-weight="800">MOVE</text>
+          <rect x="360" width="106" height="52" rx="8" fill="#070908" stroke="#2b3532"/>
+          <text x="386" y="32" fill="#f6fbf8" font-size="22" font-weight="800">NOTE</text>
+        </g>
+      </g>
+    </g>
+
+    <g transform="translate(34 536)">
+      <rect width="426" height="214" rx="8" fill="#101413" stroke="#2b3532"/>
+      <text x="20" y="34" fill="#8fdfff" font-size="14" font-weight="800">IR QUALITY</text>
+      <text x="20" y="98" fill="#f6fbf8" font-size="58" font-weight="900">72</text>
+      <text x="108" y="98" fill="#96a19d" font-size="16">BPM</text>
+      <rect x="20" y="132" width="360" height="22" rx="11" fill="#020303" stroke="#2b3532"/>
+      <rect x="20" y="132" width="292" height="22" rx="11" fill="#9bff9b"/>
+      <text x="20" y="178" fill="#96a19d" font-size="13">stronger depth signal, less surface motion?</text>
+    </g>
+
+    <g transform="translate(496 536)">
+      <rect width="426" height="214" rx="8" fill="#101413" stroke="#2b3532"/>
+      <text x="20" y="34" fill="#44f06c" font-size="14" font-weight="800">GREEN QUALITY</text>
+      <text x="20" y="98" fill="#f6fbf8" font-size="58" font-weight="900">71</text>
+      <text x="108" y="98" fill="#96a19d" font-size="16">BPM</text>
+      <rect x="20" y="132" width="360" height="22" rx="11" fill="#020303" stroke="#2b3532"/>
+      <rect x="20" y="132" width="248" height="22" rx="11" fill="#44f06c"/>
+      <text x="20" y="178" fill="#96a19d" font-size="13">surface signal, placement sensitive, useful contrast</text>
+    </g>
+
+    <g transform="translate(958 536)">
+      <rect width="446" height="214" rx="8" fill="#101413" stroke="#2b3532"/>
+      <text x="20" y="34" fill="#96a19d" font-size="14" font-weight="800">SESSION STORY</text>
+      <circle cx="42" cy="78" r="11" fill="#9bff9b"/>
+      <text x="68" y="84" fill="#f6fbf8" font-size="18" font-weight="800">steady shared pulse</text>
+      <circle cx="42" cy="120" r="11" fill="#ffbc66"/>
+      <text x="68" y="126" fill="#f6fbf8" font-size="18" font-weight="800">ratio drift during breath hold</text>
+      <circle cx="42" cy="162" r="11" fill="#ff5d73"/>
+      <text x="68" y="168" fill="#f6fbf8" font-size="18" font-weight="800">motion or solo beat suspect</text>
+    </g>
+
+    <g transform="translate(34 790)">
+      <text x="0" y="0" fill="#96a19d" font-size="14">Design rule: make it feel like a lab notebook with live traces, human reference markers, and visual trust cues. Do not make a medical-looking SpO2 dashboard.</text>
+    </g>
+  </g>
+</svg>

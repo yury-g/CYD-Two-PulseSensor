@@ -27,9 +27,9 @@ date: 2026-05-19
 
 Current test state:
 
-- Demo 1 firmware has been flashed to the connected CYD on `/dev/cu.usbserial-110`.
+- Demo 2 firmware is the current build target for the connected CYD on `/dev/cu.usbserial-110`.
 - The CYD screen title is `IR+Green PPG`.
-- The CYD screen version label is `Demo1`.
+- The CYD screen version label is `Demo2`.
 - The screen explicitly says `no SpO2`.
 - The right-side verdict panel reports `IR`, `GRN`, or `EVEN`.
 - The bottom metric reports `G/IR`, an experimental green-amplitude / IR-amplitude percentage.
@@ -75,7 +75,7 @@ That earlier result gave us a known-good two-channel analog base. This branch re
 
 ## What You See On The CYD
 
-Demo 1 is meant to run on the CYD as a standalone test instrument.
+Demo 2 is meant to run on the CYD as a standalone test instrument.
 
 On the screen:
 
