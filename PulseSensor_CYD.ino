@@ -62,6 +62,7 @@
 #define MIN_QUALIFIED_AMPLITUDE 20
 #define SIGNAL_QUALITY_STEPS 12
 #define LOCK_QUALITY_STEPS 10
+#define LOCK_QUALIFIED_BEATS 4
 #define REARM_SIGNAL_RANGE 120
 #define REARM_NO_BEAT_MS 2200
 #define REARM_COOLDOWN_MS 3500
@@ -171,6 +172,8 @@ bool previousLockedSignal = false;
 bool pulseSensorReady = false;
 bool insideBeatWindow = false;
 int signalQuality = 0;
+int qualifiedBeatStreak = 0;
+int clippedSampleScore = 0;
 int rearmCount = 0;
 
 bool dashboardDrawn = false;
@@ -230,6 +233,7 @@ void triggerBeatEffects();
 void setupPulseSensor();
 void readPulseSensor();
 bool isQualifiedBeat(int bpm, int ibi, int amplitude);
+void updateClippingScore();
 int signalCoachState();
 const char* signalCoachText();
 int amplitudeMeterSegments(int amplitude);
@@ -490,6 +494,7 @@ void readPulseSensor() {
   currentSignal = pulseSensor.getLatestSample();
   pulseAmplitude = pulseSensor.getPulseAmplitude();
   insideBeatWindow = pulseSensor.isInsideBeat();
+  updateClippingScore();
   updateSignalRange();
   maybeRearmDetector();
 
@@ -505,14 +510,16 @@ void readPulseSensor() {
       displayBPM = bpm;
       displayIBI = ibi;
       lastQualifiedBeatTime = millis();
-      signalQuality += 3;
+      qualifiedBeatStreak++;
+      if (qualifiedBeatStreak > LOCK_QUALIFIED_BEATS) qualifiedBeatStreak = LOCK_QUALIFIED_BEATS;
+      signalQuality = qualifiedBeatStreak * 3;
       if (signalQuality > SIGNAL_QUALITY_STEPS) signalQuality = SIGNAL_QUALITY_STEPS;
     } else {
-      signalQuality -= 1;
-      if (signalQuality < 0) signalQuality = 0;
+      qualifiedBeatStreak = 0;
+      signalQuality = 0;
     }
 
-    lockedSignal = signalQuality >= LOCK_QUALITY_STEPS;
+    lockedSignal = qualifiedBeatStreak >= LOCK_QUALIFIED_BEATS;
     if (signalQuality > previousQuality && !lockedSignal) {
       startSignalHarmony(signalQuality);
     }
@@ -526,6 +533,7 @@ void readPulseSensor() {
   if (millis() - lastQualifiedBeatTime > NO_BEAT_TIMEOUT) {
     lockedSignal = false;
     signalQuality = 0;
+    qualifiedBeatStreak = 0;
     displayBPM = 0;
     displayIBI = 0;
   }
@@ -535,7 +543,21 @@ bool isQualifiedBeat(int bpm, int ibi, int amplitude) {
   if (bpm < MIN_QUALIFIED_BPM || bpm > MAX_QUALIFIED_BPM) return false;
   if (ibi < MIN_QUALIFIED_IBI || ibi > MAX_QUALIFIED_IBI) return false;
   if (amplitude < MIN_QUALIFIED_AMPLITUDE) return false;
+  if (maxSignal - minSignal < SIGNAL_COACH_FLAT_RANGE) return false;
+  if (clippedSampleScore > 18) return false;
   return true;
+}
+
+void updateClippingScore() {
+  bool clipped = currentSignal <= 8 || currentSignal >= 1015;
+
+  if (clipped) {
+    clippedSampleScore += 8;
+    if (clippedSampleScore > 100) clippedSampleScore = 100;
+    return;
+  }
+
+  if (clippedSampleScore > 0) clippedSampleScore--;
 }
 
 int signalCoachState() {
@@ -596,6 +618,7 @@ void rearmPulseDetector(const char* reason) {
   lastDetectorRearmTime = millis();
   lastBeatTime = millis();
   signalQuality = 0;
+  qualifiedBeatStreak = 0;
   displayBPM = 0;
   displayIBI = 0;
   lockedSignal = false;

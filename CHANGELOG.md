@@ -4,6 +4,7 @@
 - Linked the `Why GPIO 35` note to the standalone `CYD_Analog_Pin_Scanner` diagnostic repo.
 - 2026-05-19 11:39 EDT hardware experiment: tried expanded Signal Dashboard / Finger Coach UI with lock-game visuals and coaching sounds on branch `codex/finger-coach-dashboard-20260519-111641-EDT`; rejected for IRL use because the CYD display felt too busy and the active bottom panel flickered / over-drew. Kept only the useful graph threshold affordance: cyan dotted threshold line plus `THR 550` label.
 - Restored the working one-screen dashboard layout and added a small signal-quality harmony tied to bottom-right `SIGNAL` quality progress.
+- 2026-05-19 11:43 EDT checkpoint: saved tag `last-working-20260519-114323-EDT` before false-positive tuning. Re-applied the useful detector-side lesson from the side quest without restoring the rejected UI: lock now requires four consecutive qualified beats, healthy live range, and low recent clipping.
 
 ## v1.2.0 — 2026-05-15
 **Signal Coach teaching aid and quieter startup volume**
