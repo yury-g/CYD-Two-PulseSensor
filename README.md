@@ -18,11 +18,11 @@ That page has a one-click web installer, wiring diagram, and the full tutorial. 
 
 | Channel | Feedback |
 | --- | --- |
-| Screen | Cyan waveform (searching) → white waveform (locked), BPM, IBI, 12-step quality meter |
+| Screen | Cyan waveform (searching) → white waveform (locked), dotted `THR 550` guide, BPM, IBI, compact `SIG GPIO35` quality bars |
 | Light | Onboard rear red LED blinks and fades on every qualified beat |
-| Sound | Short heartbeat tone on the CYD speaker (GPIO 26) |
+| Sound | Rising signal-quality harmony while locking, then short heartbeat tone on the CYD speaker (GPIO 26) |
 | Touch | Header buttons change speaker volume, default 1/10 |
-| Heart | Centered animated heart whose outline follows the live trace color |
+| Heart | Centered animated red heart with cyan outline |
 
 | Searching for signal | Locked on qualified beat |
 | --- | --- |
@@ -51,24 +51,25 @@ Go to **[pulsesensor.com/pages/cyd](https://pulsesensor.com/pages/cyd)** in Chro
 The same installer is also hosted from this repo:
 **[worldfamouselectronics.github.io/PulseSensor_CYD/](https://worldfamouselectronics.github.io/PulseSensor_CYD/)**
 
-### Option B — Local USB flash
+### Option B — Local USB flash with PlatformIO
 
-This is the verified developer path used to build the binaries that ship to the web installer.
+This branch includes a `platformio.ini` for repeatable local builds and uploads.
 
 1. Plug one CYD into USB.
 2. Detect the serial port:
 
 ```bash
-arduino-cli board list
+pio device list
 ```
 
-3. Flash with the helper script:
+3. Build and flash:
 
 ```bash
-./flash-cyd.sh /dev/cu.usbserial-3110
+pio run -e cyd
+pio run -e cyd -t upload
 ```
 
-If your serial port is different, pass it as the first argument. The script includes the required `TFT_eSPI` CYD display compile flags and uses `115200` upload speed.
+The current developer config uses `/dev/cu.usbserial-210` as `upload_port`. If your CYD appears on a different port, update `platformio.ini` before uploading. The config includes the required `TFT_eSPI` CYD display compile flags and uses `115200` upload speed.
 
 ### Option C — Build in Arduino IDE
 
@@ -85,7 +86,7 @@ Steps:
 3. Open it in Arduino IDE 2.x.
 4. Install the ESP32 board package.
 5. Install these libraries: `TFT_eSPI`, `PulseSensor Playground`, `XPT2046_Touchscreen`.
-6. Configure `TFT_eSPI` for the CYD display (see `flash-cyd.sh` for the exact build flags &mdash; preferred over editing global `User_Setup.h`).
+6. Configure `TFT_eSPI` for the CYD display (see `platformio.ini` for the exact build flags &mdash; preferred over editing global `User_Setup.h`).
 7. Select an ESP32 board and upload at `115200`.
 
 ---
@@ -104,7 +105,9 @@ Every reading on screen comes directly from the [PulseSensor Playground](https:/
 | Amplitude meter | `getPulseAmplitude()` |
 | Dotted threshold guide | `setThreshold(550)` |
 
-The 12-step quality meter rises on qualified beats and falls on questionable ones. Lock at `10/12`. The `R#` counter shows automatic detector re-arms.
+The 12-step quality meter is shown as bars in the compact `SIG GPIO35` panel. Lock requires four consecutive qualified beats, a healthy live signal range, and low recent clipping, which keeps the classroom demo from locking onto obvious false positives.
+
+The `SIG GPIO35` label is intentionally compact because a future revision may show two PulseSensor inputs side by side.
 
 ---
 
@@ -177,30 +180,36 @@ Good Playground branches that should stay out of this default firmware until the
 
 ---
 
-## Build the Web Installer Firmware
+## Web Installer Firmware
 
-The web installer's binary parts live in `docs/flasher/firmware/`. Rebuild them with:
+The web installer's binary parts live in `firmware/`, and the root `manifest.json` lists their ESP Web Tools offsets:
 
-```bash
-bash scripts/build-web-flasher-firmware.sh
-```
+- `firmware/bootloader.bin` (offset `0x1000`)
+- `firmware/partitions.bin` (offset `0x8000`)
+- `firmware/boot_app0.bin` (offset `0xE000`)
+- `firmware/firmware.bin` (offset `0x10000`)
 
-The script uses the same board family, upload speed, and display flags as `flash-cyd.sh`. It writes:
-
-- `docs/flasher/firmware/bootloader.bin` (offset `0x1000`)
-- `docs/flasher/firmware/partitions.bin` (offset `0x8000`)
-- `docs/flasher/firmware/boot_app0.bin` (offset `0xE000`)
-- `docs/flasher/firmware/firmware.bin` (offset `0x10000`)
-
-The manifest at `docs/flasher/manifest.json` lists those offsets for [ESP Web Tools](https://esphome.github.io/esp-web-tools/).
+Use the PlatformIO local flash path above while iterating on source. Regenerate and replace the installer binaries before publishing a web-flasher release.
 
 ## Regenerate Screenshots
 
-After UI changes:
+The checked-in screenshots are SVG recreations of the CYD screen in `docs/screenshots/`. Update them whenever the on-device layout changes.
 
-```bash
-node scripts/render-dashboard-screenshots.mjs
+## Development Checkpoints
+
+The current hardware-tested branch is:
+
+```text
+codex/finger-coach-dashboard-20260519-111641-EDT
 ```
+
+Timestamped local tags record the iteration path:
+
+- `last-working-20260519-114323-EDT` — one-screen dashboard with threshold label before false-positive tuning.
+- `false-positive-tune-20260519-114323-EDT` — re-applied stricter signal lock: four consecutive qualified beats, healthy live range, and low recent clipping.
+- `signal-box-minimal-20260519-114712-EDT` — compact `SIG GPIO35` quality-bar panel.
+
+See `docs/experiment-log.md` for the rejected Signal Dashboard / Finger Coach side quest. The only UI idea carried forward from that experiment is the dotted threshold line plus `THR 550` label.
 
 ---
 
