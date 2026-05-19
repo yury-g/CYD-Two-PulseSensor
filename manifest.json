@@ -1,5 +1,5 @@
 {
-  "name": "PulseSensor CYD Dashboard",
+  "name": "CYD Two PulseSensor Comparator",
   "version": "1.2.0",
   "new_install_prompt_erase": true,
   "builds": [
