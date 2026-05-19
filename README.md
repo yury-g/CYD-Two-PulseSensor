@@ -23,6 +23,10 @@ Use `3.3V`, not `5V`.
 - `BEST` badge for the channel with the stronger non-railed signal
 - `REL` percentage showing how much the two signals move together
 
+Rendered design reference:
+
+![Two PulseSensor comparator screen](docs/screenshots/comparator-textbook-20260519-130920-EDT.svg)
+
 The first version intentionally reads raw ADC values instead of using PulseSensorPlayground. The goal is to learn which wire/pin/sensor gives the cleaner signal before building two-channel beat detection.
 
 ## Build And Flash

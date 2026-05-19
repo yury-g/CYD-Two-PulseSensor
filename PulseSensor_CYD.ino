@@ -28,10 +28,10 @@
 #define HEADER_H 36
 #define GRAPH_X 8
 #define GRAPH_W 304
-#define GRAPH_A_Y 45
-#define GRAPH_B_Y 116
-#define GRAPH_H 58
-#define METRIC_Y 184
+#define GRAPH_A_Y 50
+#define GRAPH_B_Y 121
+#define GRAPH_H 52
+#define METRIC_Y 188
 #define ADC_MAX_VALUE 4095
 #define HISTORY_SIZE 64
 
@@ -82,10 +82,12 @@ void updateHistory();
 int scoreChannel(const Channel& channel);
 int signalToY(const Channel& channel, int graphY);
 void drawStaticScreen();
-void drawGraphFrame(int y, const char* title, uint16_t color);
+void drawGraphFrame(int y, const char* title, const char* note, uint16_t color);
 void drawGraphColumn();
+void drawGraphStats(int y, const Channel& channel);
 void drawMetrics();
 void drawChannelMetric(int x, const Channel& channel, bool best);
+void drawRelationMetric(int corr);
 void drawCenteredText(const char* text, int x, int y, int w, uint16_t color, uint16_t bg);
 int correlationPercent();
 const char* relationLabel(int corr);
@@ -205,21 +207,33 @@ void drawStaticScreen() {
 
   tft.setTextColor(COLOR_DIM, COLOR_BG);
   tft.setCursor(10, 23);
-  tft.print("GPIO35 vs GPIO27 raw signal, quality, relation");
+  tft.print("raw ADC, rolling range, and signal relationship");
+
+  tft.setTextColor(COLOR_A, COLOR_BG);
+  tft.setCursor(238, 8);
+  tft.print("A GPIO35");
+  tft.setTextColor(COLOR_B, COLOR_BG);
+  tft.setCursor(238, 23);
+  tft.print("B GPIO27");
 
   tft.drawFastHLine(0, HEADER_H, SCREEN_WIDTH, COLOR_GRID);
-  drawGraphFrame(GRAPH_A_Y, "A GPIO35", COLOR_A);
-  drawGraphFrame(GRAPH_B_Y, "B GPIO27", COLOR_B);
+  drawGraphFrame(GRAPH_A_Y, "A GPIO35", "cleaner input candidate", COLOR_A);
+  drawGraphFrame(GRAPH_B_Y, "B GPIO27", "second input candidate", COLOR_B);
   tft.drawFastHLine(0, METRIC_Y - 7, SCREEN_WIDTH, COLOR_GRID);
 }
 
-void drawGraphFrame(int y, const char* title, uint16_t color) {
+void drawGraphFrame(int y, const char* title, const char* note, uint16_t color) {
   tft.drawRect(GRAPH_X, y, GRAPH_W, GRAPH_H, COLOR_GRID);
-  tft.drawFastHLine(GRAPH_X + 1, y + GRAPH_H / 2, GRAPH_W - 2, COLOR_GRID);
+  for (int x = GRAPH_X + 2; x < GRAPH_X + GRAPH_W - 2; x += 6) {
+    tft.drawFastHLine(x, y + GRAPH_H / 2, 3, COLOR_GRID);
+  }
   tft.setTextSize(1);
   tft.setTextColor(color, COLOR_BG);
   tft.setCursor(GRAPH_X + 4, y - 11);
   tft.print(title);
+  tft.setTextColor(COLOR_DIM, COLOR_BG);
+  tft.setCursor(GRAPH_X + 60, y - 11);
+  tft.print(note);
 }
 
 void drawGraphColumn() {
@@ -250,6 +264,20 @@ void drawGraphColumn() {
     tft.fillRect(GRAPH_X + 1, GRAPH_A_Y + 1, GRAPH_W - 2, GRAPH_H - 2, COLOR_BG);
     tft.fillRect(GRAPH_X + 1, GRAPH_B_Y + 1, GRAPH_W - 2, GRAPH_H - 2, COLOR_BG);
   }
+
+  drawGraphStats(GRAPH_A_Y, channelA);
+  drawGraphStats(GRAPH_B_Y, channelB);
+}
+
+void drawGraphStats(int y, const Channel& channel) {
+  tft.fillRect(255, y + 5, 54, 24, COLOR_BG);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(258, y + 8);
+  tft.printf("raw%5d", channel.raw);
+  tft.setTextColor(COLOR_DIM, COLOR_BG);
+  tft.setCursor(258, y + 20);
+  tft.printf("rng%5d", channel.range);
 }
 
 void drawMetrics() {
@@ -258,35 +286,47 @@ void drawMetrics() {
 
   tft.fillRect(0, METRIC_Y, SCREEN_WIDTH, SCREEN_HEIGHT - METRIC_Y, COLOR_BG);
   drawChannelMetric(8, channelA, aBest);
-  drawChannelMetric(112, channelB, !aBest);
-
-  tft.setTextSize(1);
-  tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(222, METRIC_Y + 5);
-  tft.print("REL");
-  tft.setCursor(222, METRIC_Y + 22);
-  tft.printf("%+d%%", corr);
-  tft.setTextColor(COLOR_DIM, COLOR_BG);
-  tft.setCursor(222, METRIC_Y + 39);
-  tft.print(relationLabel(corr));
+  drawChannelMetric(104, channelB, !aBest);
+  drawRelationMetric(corr);
 }
 
 void drawChannelMetric(int x, const Channel& channel, bool best) {
-  tft.drawRect(x, METRIC_Y + 2, 94, 49, best ? COLOR_GREEN : COLOR_GRID);
+  tft.drawRect(x, METRIC_Y, 88, 42, channel.color);
   tft.setTextSize(1);
   tft.setTextColor(channel.color, COLOR_BG);
-  tft.setCursor(x + 5, METRIC_Y + 7);
-  tft.print(channel.name);
+  tft.setCursor(x + 6, METRIC_Y + 6);
+  if (channel.pin == PULSE_A_PIN) {
+    tft.print("A SCORE");
+  } else {
+    tft.print("B SCORE");
+  }
 
   tft.setTextColor(COLOR_TEXT, COLOR_BG);
-  tft.setCursor(x + 5, METRIC_Y + 20);
-  tft.printf("raw %4d", channel.raw);
-  tft.setCursor(x + 5, METRIC_Y + 33);
-  tft.printf("rng %4d", channel.range);
+  tft.setTextSize(2);
+  tft.setCursor(x + 6, METRIC_Y + 20);
+  tft.printf("%3d", channel.quality);
 
   tft.setTextColor(best ? COLOR_GREEN : COLOR_DIM, COLOR_BG);
-  tft.setCursor(x + 62, METRIC_Y + 7);
+  tft.setTextSize(1);
+  tft.setCursor(x + 58, METRIC_Y + 29);
   tft.print(best ? "BEST" : "    ");
+}
+
+void drawRelationMetric(int corr) {
+  tft.drawRect(200, METRIC_Y, 112, 42, COLOR_DIM);
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_TEXT, COLOR_BG);
+  tft.setCursor(206, METRIC_Y + 6);
+  tft.print("RELATION");
+
+  tft.setTextSize(2);
+  tft.setCursor(206, METRIC_Y + 20);
+  tft.printf("%+d%%", corr);
+
+  tft.setTextSize(1);
+  tft.setTextColor(COLOR_DIM, COLOR_BG);
+  tft.setCursor(270, METRIC_Y + 29);
+  tft.print(relationLabel(corr));
 }
 
 int correlationPercent() {

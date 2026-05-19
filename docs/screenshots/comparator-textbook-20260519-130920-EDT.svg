@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 320 240" role="img" aria-label="CYD Two PulseSensor comparator science-style screen mockup">
+  <rect width="320" height="240" fill="#000000"/>
+
+  <text x="10" y="14" fill="#ffffff" font-family="Arial, sans-serif" font-size="9" font-weight="700">Two PulseSensor Comparator</text>
+  <text x="10" y="28" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">raw ADC, rolling range, and signal relationship</text>
+  <text x="238" y="14" fill="#00ffff" font-family="Arial, sans-serif" font-size="7" font-weight="700">A GPIO35</text>
+  <text x="238" y="28" fill="#ffde00" font-family="Arial, sans-serif" font-size="7" font-weight="700">B GPIO27</text>
+  <line x1="0" y1="36" x2="320" y2="36" stroke="#18c7c7" stroke-opacity="0.35"/>
+
+  <text x="10" y="46" fill="#00ffff" font-family="Arial, sans-serif" font-size="8" font-weight="700">A GPIO35</text>
+  <text x="68" y="46" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">cleaner input candidate</text>
+  <rect x="8" y="50" width="304" height="52" fill="none" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <line x1="10" y1="76" x2="310" y2="76" stroke="#18e3e3" stroke-opacity="0.32" stroke-dasharray="3 3"/>
+  <path d="M10 79 C26 62, 42 61, 58 76 S90 91, 106 74 S138 55, 154 73 S186 92, 202 75 S234 59, 250 72 S282 88, 310 70" fill="none" stroke="#00ffff" stroke-width="2"/>
+  <text x="274" y="62" fill="#ffffff" font-family="Arial, sans-serif" font-size="7">raw 2138</text>
+  <text x="274" y="73" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">rng  286</text>
+
+  <text x="10" y="117" fill="#ffde00" font-family="Arial, sans-serif" font-size="8" font-weight="700">B GPIO27</text>
+  <text x="68" y="117" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">second input candidate</text>
+  <rect x="8" y="121" width="304" height="52" fill="none" stroke="#18e3e3" stroke-opacity="0.45"/>
+  <line x1="10" y1="147" x2="310" y2="147" stroke="#18e3e3" stroke-opacity="0.32" stroke-dasharray="3 3"/>
+  <path d="M10 149 C26 136, 42 134, 58 146 S90 160, 106 145 S138 130, 154 144 S186 158, 202 147 S234 135, 250 143 S282 155, 310 141" fill="none" stroke="#ffde00" stroke-width="2"/>
+  <text x="274" y="133" fill="#ffffff" font-family="Arial, sans-serif" font-size="7">raw 2094</text>
+  <text x="274" y="144" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">rng  218</text>
+
+  <line x1="0" y1="181" x2="320" y2="181" stroke="#18c7c7" stroke-opacity="0.35"/>
+  <rect x="8" y="188" width="88" height="42" rx="2" fill="#041515" stroke="#00ffff" stroke-opacity="0.75"/>
+  <text x="14" y="201" fill="#00ffff" font-family="Arial, sans-serif" font-size="8" font-weight="700">A SCORE</text>
+  <text x="14" y="219" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">286</text>
+  <text x="66" y="219" fill="#00ff66" font-family="Arial, sans-serif" font-size="7" font-weight="700">BEST</text>
+
+  <rect x="104" y="188" width="88" height="42" rx="2" fill="#151204" stroke="#ffde00" stroke-opacity="0.75"/>
+  <text x="110" y="201" fill="#ffde00" font-family="Arial, sans-serif" font-size="8" font-weight="700">B SCORE</text>
+  <text x="110" y="219" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">218</text>
+
+  <rect x="200" y="188" width="112" height="42" rx="2" fill="#080808" stroke="#8c8e8c"/>
+  <text x="206" y="201" fill="#ffffff" font-family="Arial, sans-serif" font-size="8" font-weight="700">RELATION</text>
+  <text x="206" y="219" fill="#ffffff" font-family="Arial, sans-serif" font-size="18" font-weight="700">+72%</text>
+  <text x="264" y="219" fill="#8c8e8c" font-family="Arial, sans-serif" font-size="7">same</text>
+</svg>

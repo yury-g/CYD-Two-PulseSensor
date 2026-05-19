@@ -1,6 +1,6 @@
 # Codex Handoff: CYD Two PulseSensor Comparator
 
-Last updated: 2026-05-19 13:04:51 EDT
+Last updated: 2026-05-19 13:09:20 EDT
 
 This repository is an experimental clone of `yury-g/CYD_App_Launcher` for testing two PulseSensor inputs on one ESP32-2432S028 CYD.
 
@@ -33,6 +33,22 @@ The firmware intentionally reads raw ADC values instead of using PulseSensorPlay
 - raw value and rolling range for each
 - `BEST` badge for stronger non-railed signal
 - `REL` percentage showing whether the two signals move together
+
+## Current Visual Direction
+
+2026-05-19 13:09:20 EDT: after the first two-sensor MVP worked well on hardware, the UI was revised with a rendered SVG design reference before flashing. The visual direction is science textbook communication: two clearly labeled traces, live raw/range overlays, bottom score boxes, and a relationship/correlation box.
+
+Rendered reference:
+
+```text
+docs/screenshots/comparator-textbook-20260519-130920-EDT.svg
+```
+
+Decision log:
+
+```text
+docs/decision-log.md
+```
 
 ## Hardware Finding
 
