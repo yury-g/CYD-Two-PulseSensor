@@ -1,59 +1,104 @@
-# CYD Two PulseSensor A/B Lab
+# CYD IR + Green PPG Testing
 
-This is a two-sensor PulseSensor experiment for the ESP32-2432S028 CYD touchscreen board. It compares two PulseSensor pickups side by side so you can see which one gives cleaner raw signal, steadier BPM/IBI timing, fewer false beat events, and better agreement over time.
+This branch is an experimental fork of the validated two-PulseSensor A/B build. It is for testing two different PPG light channels on the CYD:
 
-The current build works as both:
+- IR PPG signal on `GPIO35`
+- green-light PPG signal on `GPIO27`
 
-- a standalone CYD instrument on the touchscreen
-- an optional Chrome Web Serial dashboard for a larger lab view
+The goal of this branch is to compare pickup quality, pulse timing, raw waveform behavior, BPM/IBI stability, and an exploratory green/IR amplitude ratio.
 
-> Educational signal-comparison demo only. Not for medical use.
+> Important: this is not a medical device and does not calculate real blood oxygen. Classic pulse oximetry requires calibrated red + IR measurement. IR + green can be useful for PPG experimentation, but the current `G/IR` number is only an experimental signal ratio.
 
-![Web Serial A/B dashboard demo](docs/screenshots/webserial-demo-timing-history-20260519-codex.png)
+## Branch Status
 
-## What This App Does
-
-The project is trying to answer a simple hardware question:
+Current branch:
 
 ```text
-If two PulseSensors are connected at the same time,
-which pickup is more believable right now?
+codex/ir-green-led-testing
 ```
 
-It does that by showing the two sensors as `A` and `B`:
+This branch was created from the last validated A/B dashboard state:
 
-| Sensor | Color | Signal Pin | Purpose |
-| --- | --- | --- | --- |
-| A | light blue | `GPIO35` | first PulseSensor signal |
-| B | light yellow | `GPIO27` | second PulseSensor signal |
+```text
+base commit: 374fc75 Add Web Serial A-B validation dashboard
+base tag: webserial-ab-validated-20260519-142635-EDT
+date: 2026-05-19
+```
 
-The app compares both sensors through the same `PulseSensorPlayground` detector. It looks at raw waveform shape, BPM, IBI, beat timing, signal amplitude, lock quality, and solo beat events that might be false positives.
+Current test state:
+
+- Demo 1 firmware has been flashed to the connected CYD on `/dev/cu.usbserial-110`.
+- The CYD screen title is `IR+Green PPG`.
+- The CYD screen version label is `Demo1`.
+- The screen explicitly says `no SpO2`.
+- The right-side verdict panel reports `IR`, `GRN`, or `EVEN`.
+- The bottom metric reports `G/IR`, an experimental green-amplitude / IR-amplitude percentage.
+- This branch has not been pushed, so it is local/private unless pushed later.
+
+Unfinished at this stage:
+
+- The browser dashboard still comes from the A/B build and is not yet redesigned for IR/Green language.
+- Serial telemetry still uses the existing `AB,...` format for compatibility.
+- The `G/IR` ratio is not calibrated and should not be interpreted as oxygen saturation.
+- No branch-specific screenshots have been captured yet.
+
+## What Is Being Tested
+
+The experiment asks:
+
+```text
+Can one CYD compare an IR PPG channel and a green PPG channel at the same time?
+Which channel has cleaner pulse pickup under the current wiring and placement?
+```
+
+The CYD compares both channels through the same `PulseSensorPlayground` detector. It shows raw waveform strips, BPM, IBI, beat flashes, quality bars, and a cleaner-channel verdict.
+
+## Current Wiring
+
+| Sensor Channel | Light Type | Signal Pin | Power | Ground |
+| --- | --- | --- | --- | --- |
+| IR | infrared PPG | `GPIO35` | `3.3V` | `GND` |
+| GRN | green-light PPG | `GPIO27` | `3.3V` | `GND` |
+
+Use `3.3V`, not `5V`.
+
+## Why These Pins
+
+The underlying A/B project came from a pin-mapping journey on the CYD:
+
+- `GPIO35` behaved well as an analog input and became the first stable PPG channel.
+- `GPIO27` behaved well as the second analog input.
+- Both worked together with `PulseSensorPlayground(2)` while the CYD screen stayed functional.
+- `GPIO22` did show raw signal during scanner testing, but an earlier dashboard experiment using it caused a screen on/off reset loop. Avoid `GPIO22` for now.
+
+That earlier result gave us a known-good two-channel analog base. This branch reuses that base, but changes the meaning of the channels from generic A/B PulseSensors to IR/Green PPG.
 
 ## What You See On The CYD
 
-The CYD screen is meant to work by itself, without a laptop dashboard.
+Demo 1 is meant to run on the CYD as a standalone test instrument.
 
-![Two PulseSensor Playground A/B screen](docs/screenshots/playground-ab-20260519-133133-EDT.svg)
+On the screen:
 
-On the device:
+- `IR GPIO35` is the IR PPG channel.
+- `GRN GPIO27` is the green PPG channel.
+- The two raw waveform strips are the main truth view.
+- BPM and IBI are still produced by `PulseSensorPlayground`.
+- Beat flashes show detector events.
+- Quality bars show pickup confidence.
+- `CLEANER PPG` reports the channel with the stronger current quality score.
+- `G/IR` shows green amplitude divided by IR amplitude as a percent.
 
-- the top two strips are compact raw waveform views for A and B
-- each sensor gets BPM and IBI from `PulseSensorPlayground`
-- beat flashes show when the detector sees a beat
-- quality bars show pickup confidence
-- the verdict says which sensor looks better in the current window
+The header says `no SpO2` on purpose. This branch should stay honest about what the sensors can and cannot determine.
 
-The raw strips are the "truth view." If BPM looks odd, check whether the raw waveform looks believable.
+## What Remains From The A/B Build
 
-## What You See In The Browser
-
-The browser dashboard lives in:
+This branch still inherits the Web Serial lab page:
 
 ```text
 webserial.html
 ```
 
-Run a local server:
+Run it locally:
 
 ```sh
 cd /Users/narwhal2/Documents/CYD-Two-PulseSensor
@@ -66,47 +111,13 @@ Open:
 http://localhost:8765/webserial.html
 ```
 
-In Chrome, Edge, or Brave, click `Connect` and choose the CYD serial port. The dashboard listens to compact `AB,...` telemetry from the CYD at 115200 baud.
+The dashboard still displays A/B wording because it was built for the previous two-PulseSensor comparison. It can still visualize the serial stream, but it has not yet been renamed or redesigned for IR/Green testing.
 
-The browser view is designed to be understandable with minimal reading:
+The old A/B visual reference is still useful as project history:
 
-| Color | Meaning |
-| --- | --- |
-| light blue | Sensor A / `GPIO35` |
-| light yellow | Sensor B / `GPIO27` |
-| green | A and B agree |
-| orange | timing or BPM drift |
-| red | solo beat suspect, possible false positive |
+![Web Serial A/B dashboard demo](docs/screenshots/webserial-demo-timing-history-20260519-codex.png)
 
-The most important browser panel is `Timing Agreement History`. It shows when the two sensors agree beat-to-beat, when they drift away, and when only one sensor reports an extra beat. The current winner is based on history, not just the latest number.
-
-There is also a `Demo` button for layout testing without hardware. Future agents should use Demo mode for browser checks unless a human explicitly asks them to touch Web Serial.
-
-## Pin Mapping Journey
-
-This repo started from the one-sensor CYD app, then moved into a separate two-sensor repo after pin-scanner testing. The goal was to find two analog-capable pins that could read PulseSensor signals at the same time without breaking the CYD display.
-
-The settled mapping is:
-
-| PulseSensor Wire | Sensor A | Sensor B |
-| --- | --- | --- |
-| red | `3.3V` | `3.3V` |
-| black | `GND` | `GND` |
-| purple signal | `GPIO35` | `GPIO27` |
-
-Use `3.3V`, not `5V`.
-
-Why these pins:
-
-- `GPIO35` behaved well as an analog input and became Sensor A.
-- `GPIO27` behaved well as the second analog input and became Sensor B.
-- Both worked together with `PulseSensorPlayground(2)` and the CYD screen.
-- `GPIO22` did show raw scanner signal, but an earlier dashboard experiment using it caused a screen on/off reset loop. Avoid `GPIO22` for now.
-- The current validated build successfully used `GPIO35` plus `GPIO27` for simultaneous CYD screen and browser telemetry testing.
-
-This was the important hardware result: two PulseSensors could run at once while the CYD remained a functional standalone display.
-
-## Current Firmware Behavior
+## Firmware Behavior
 
 Firmware entrypoint:
 
@@ -114,38 +125,25 @@ Firmware entrypoint:
 PulseSensor_CYD.ino
 ```
 
-Current detector setup:
+Current Demo 1 detector setup:
 
 | Setting | Value |
 | --- | --- |
 | detector | `PulseSensorPlayground(2)` |
-| A signal | `GPIO35` |
-| B signal | `GPIO27` |
+| IR signal | `GPIO35` |
+| green signal | `GPIO27` |
 | ADC resolution | 10-bit |
 | threshold | `550` |
 | serial baud | `115200` |
 | telemetry interval | about 40 ms |
 
-The firmware emits one compact line for the browser:
+Serial telemetry remains:
 
 ```text
 AB,t,aSample,aBpm,aIbi,aQuality,aBeats,aAmp,aRange,aLocked,aBeat,bSample,bBpm,bIbi,bQuality,bBeats,bAmp,bRange,bLocked,bBeat,bpmDiff,winner
 ```
 
-The CYD screen still runs while telemetry is being emitted. The browser dashboard is additive, not a replacement.
-
-## Hardware Notes
-
-Hardware used for the validated build:
-
-| Part | Detail |
-| --- | --- |
-| board | `ESP32-2432S028` CYD |
-| ESP32 chip seen while flashing | `ESP32-D0WD-V3`, revision `v3.1` |
-| display | ILI9341 320x240 TFT |
-| backlight | `GPIO21` |
-| PulseSensor power | `3.3V` |
-| PulseSensor ground | `GND` |
+For this branch, interpret `a*` fields as IR and `b*` fields as green until the browser/telemetry naming is updated.
 
 ## Build And Flash
 
@@ -156,67 +154,64 @@ cd /Users/narwhal2/Documents/CYD-Two-PulseSensor
 /Users/narwhal2/Library/Python/3.9/bin/pio run -e cyd
 ```
 
-Flash:
+Flash the currently connected test CYD:
 
 ```sh
 cd /Users/narwhal2/Documents/CYD-Two-PulseSensor
-/Users/narwhal2/Library/Python/3.9/bin/pio run -e cyd -t upload
+/Users/narwhal2/Library/Python/3.9/bin/pio run -e cyd -t upload --upload-port /dev/cu.usbserial-110
 ```
 
-Current local upload port:
+The previous A/B CYD often appeared as:
 
 ```text
 /dev/cu.usbserial-210
 ```
 
-If flashing fails because the port cannot be opened, check whether Chrome is still connected to Web Serial. Chrome can hold `/dev/cu.usbserial-210`; click `Disconnect` in the dashboard or close the tab, then flash again.
+Check ports before flashing:
 
-## Current Validated State
-
-Last pushed working state:
-
-```text
-commit: 374fc75 Add Web Serial A-B validation dashboard
-tag: webserial-ab-validated-20260519-142635-EDT
-date: 2026-05-19
+```sh
+/Users/narwhal2/Library/Python/3.9/bin/pio device list
 ```
 
-What worked at this stage:
+If flashing fails because the port cannot be opened, check whether Chrome is connected to Web Serial. Chrome can hold the serial port; click `Disconnect` in the dashboard or close the tab, then flash again.
 
-- CYD standalone A/B screen
-- simultaneous A and B PulseSensor readings
-- serial `AB,...` telemetry
-- Chrome Web Serial dashboard
-- raw overlap comparator
-- timing agreement history
-- green/orange/red trust visualization
-- history-based winner
-- IBI microscope
-- demo mode
+## Hardware Notes
+
+Hardware used for the validated base build and this branch:
+
+| Part | Detail |
+| --- | --- |
+| board | `ESP32-2432S028` CYD |
+| ESP32 chip seen while flashing | `ESP32-D0WD-V3`, revision `v3.1` |
+| display | ILI9341 320x240 TFT |
+| backlight | `GPIO21` |
+| sensor power | `3.3V` |
+| sensor ground | `GND` |
 
 ## Agent Handoff Notes
 
-This repo is the active two-sensor build:
+For future agents:
+
+- This branch is experimental IR/Green PPG testing, not the finished A/B mainline.
+- Do not claim or imply that IR + green determines blood oxygen.
+- Keep `GPIO35` as IR and `GPIO27` as green unless the human explicitly changes wiring.
+- Keep `GPIO22` avoided for now because of the earlier reset-loop behavior.
+- The Web Serial dashboard is inherited and not yet branch-specific.
+- In automated browser checks, use Demo; do not click `Connect` or turn on `Auto` unless the human explicitly asks.
+- Do not push this branch unless the human asks; it is intended to stay local/private for now.
+- Do not push to the original one-sensor repo.
+
+Active repo:
 
 ```text
 origin: git@github.com:yury-g/CYD-Two-PulseSensor.git
 ```
 
-Do not make changes in, push to, or use the original one-sensor launcher repo unless explicitly asked:
+Do not push:
 
 ```text
-do not push: git@github.com:yury-g/CYD_App_Launcher.git
+git@github.com:yury-g/CYD_App_Launcher.git
 ```
-
-Important details for future AI agents:
-
-- The CYD should remain a standalone A/B instrument.
-- The browser dashboard is an optional larger lab view.
-- `webserial.html` intentionally starts with `Auto` unchecked.
-- Do not reintroduce automatic serial probing on page load.
-- In automated browser checks, use `Demo`; do not click `Connect` or turn on `Auto` unless the human explicitly asks.
-- Avoid `GPIO22` for now because of the previous screen reset loop.
-- Keep changes scoped to this repo, not the source launcher repo.
 
 ## Related Repos
 
