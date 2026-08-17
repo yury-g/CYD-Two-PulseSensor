@@ -1,3 +1,5 @@
+> **Personal experimental comparison by Yury Gitman.** This repository is not official World Famous Electronics or PulseSensor documentation and does not define supported hardware, wiring, product behavior, or company policy. Current company information lives at [PulseSensor.com](https://pulsesensor.com) and under [`WorldFamousElectronics`](https://github.com/WorldFamousElectronics).
+
 # CYD Two PulseSensor Playground A/B
 
 Experimental ESP32-2432S028 CYD firmware for comparing how two PulseSensor inputs perform with PulseSensorPlayground BPM, IBI, and beat-event detection.
